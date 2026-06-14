@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/cg/:path*", "destination": "/api/cg-proxy?cgpath=:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
