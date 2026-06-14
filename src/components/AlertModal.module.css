@@ -1,0 +1,164 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+.modal {
+  width: 100%;
+  max-width: 380px;
+  background: #0d0d0d;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: left;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; }
+.coin { display: flex; align-items: center; gap: 10px; }
+.coinName { font-size: 15px; font-weight: 500; color: #eee; }
+.coinNow { font-size: 12px; color: #666; font-family: monospace; }
+.close { background: none; border: none; color: #555; cursor: pointer; font-size: 14px; padding: 4px; transition: color 0.15s; }
+.close:hover { color: #ccc; }
+
+.label { font-size: 12px; color: #777; margin-bottom: 10px; }
+.toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+.toggleBtn {
+  padding: 10px 8px;
+  background: #141414;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 10px;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.toggleBtn:hover { border-color: #444; }
+.toggleActiveUp { border-color: #1D9E75 !important; background: #0d1f1a !important; color: #5DCAA5 !important; }
+.toggleActiveDown { border-color: #E24B4A !important; background: #1f0d0d !important; color: #E88; }
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #141414;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 0 14px;
+  margin-bottom: 10px;
+}
+.dollar { color: #666; font-family: monospace; font-size: 18px; }
+.input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #eee;
+  font-size: 20px;
+  font-family: monospace;
+  padding: 14px 0;
+  width: 100%;
+}
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.pct { font-size: 13px; font-family: monospace; }
+.up { color: #1D9E75; }
+.down { color: #E24B4A; }
+
+.inputWarn { border-color: #C9772A !important; }
+.warn {
+  background: rgba(201, 119, 42, 0.1);
+  border: 0.5px solid rgba(201, 119, 42, 0.4);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 1rem;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #E0A56A;
+  text-align: left;
+}
+.warn b { color: #f0c089; }
+.warn code { font-family: monospace; background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; color: #ddd; font-size: 11px; }
+
+.presets { display: flex; gap: 8px; margin-bottom: 10px; }
+
+.noteInput {
+  width: 100%;
+  box-sizing: border-box;
+  background: #141414;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 11px 14px;
+  margin-bottom: 1.5rem;
+  color: #eee;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.noteInput:focus { border-color: #444; }
+.noteInput::placeholder { color: #555; }
+
+.emailRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+  font-size: 12px;
+  color: #aaa;
+  cursor: pointer;
+  text-align: left;
+}
+.emailRow input { accent-color: #1D9E75; width: 15px; height: 15px; cursor: pointer; }
+
+.emailLocked {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(192, 132, 252, 0.06);
+  border: 0.5px solid rgba(192, 132, 252, 0.3);
+  border-radius: 10px;
+  padding: 11px;
+  margin-bottom: 1.25rem;
+  color: #c084fc;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.emailLocked:hover { background: rgba(192, 132, 252, 0.12); }
+.preset {
+  flex: 1;
+  padding: 8px 0;
+  background: #141414;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 8px;
+  color: #888;
+  font-size: 12px;
+  font-family: monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.preset:hover { border-color: #444; color: #ccc; }
+
+.submit {
+  width: 100%;
+  padding: 13px;
+  background: #1D9E75;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.submit:hover:not(:disabled) { background: #17865f; }
+.submit:disabled { opacity: 0.4; cursor: not-allowed; }
+.hint { font-size: 11px; color: #555; text-align: center; margin-top: 12px; line-height: 1.5; }

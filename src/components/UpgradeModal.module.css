@@ -1,0 +1,45 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  background: #0d0d0d;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 2rem 1.5rem 1.5rem;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.close {
+  position: absolute; top: 12px; right: 14px;
+  background: none; border: none; color: #555;
+  cursor: pointer; font-size: 14px; transition: color 0.15s;
+}
+.close:hover { color: #ccc; }
+.icon { font-size: 32px; margin-bottom: 12px; }
+.title { font-size: 16px; font-weight: 500; color: #eee; margin-bottom: 8px; }
+.message { font-size: 13px; color: #888; line-height: 1.6; margin-bottom: 1.5rem; }
+.cta {
+  width: 100%;
+  padding: 13px;
+  background: #1D9E75;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cta:hover { background: #17865f; }
+.hint { font-size: 11px; color: #555; margin-top: 12px; }

@@ -1,0 +1,154 @@
+.page {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4rem 2rem;
+  min-height: 60vh;
+}
+.card {
+  width: 100%;
+  max-width: 380px;
+  background: #0d0d0d;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+}
+.title { font-size: 18px; font-weight: 500; color: #eee; margin-bottom: 6px; word-break: break-all; }
+.sub { font-size: 13px; color: #666; margin-bottom: 1.5rem; }
+.loading { font-size: 13px; color: #555; padding: 4rem; }
+.planPaid { color: #5DCAA5; }
+.manageLink { color: #5DCAA5; text-decoration: underline; }
+
+.notice {
+  background: rgba(29, 158, 117, 0.08);
+  border: 0.5px solid rgba(29, 158, 117, 0.3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 1.1rem;
+  font-size: 12px;
+  color: #5DCAA5;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.googleBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  color: #1f1f1f;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.googleBtn:hover { background: #e8e8e8; }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 1.1rem 0;
+  color: #555;
+  font-size: 11px;
+}
+.divider::before,
+.divider::after { content: ''; flex: 1; height: 0.5px; background: #2a2a2a; }
+
+.form { display: flex; flex-direction: column; gap: 10px; }
+.input {
+  background: #141414;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #eee;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input:focus { border-color: #1D9E75; }
+.input::placeholder { color: #555; }
+
+.error {
+  background: rgba(226, 75, 74, 0.1);
+  border: 0.5px solid rgba(226, 75, 74, 0.4);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #E88;
+  text-align: left;
+  line-height: 1.5;
+}
+.info {
+  background: rgba(29, 158, 117, 0.1);
+  border: 0.5px solid rgba(29, 158, 117, 0.4);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #5DCAA5;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.submitBtn {
+  background: #1D9E75;
+  border: none;
+  border-radius: 10px;
+  padding: 13px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.submitBtn:hover:not(:disabled) { background: #17865f; }
+.submitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.secondaryBtn {
+  background: none;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 11px 20px;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.secondaryBtn:hover { border-color: #E24B4A; color: #E24B4A; }
+
+.switch { margin-top: 1.25rem; font-size: 12px; color: #666; }
+.switch button {
+  background: none; border: none; color: #5DCAA5; font-size: 12px;
+  cursor: pointer; padding: 0; text-decoration: underline;
+}
+
+.avatar {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: #0F6E56; color: #5DCAA5;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 500;
+  margin: 0 auto 1rem;
+}
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.syncStatus { font-size: 11px; color: #5DCAA5; margin-bottom: 1.5rem; }
+.stat { background: #141414; border: 0.5px solid #2a2a2a; border-radius: 10px; padding: 14px; }
+.statNum { font-size: 22px; font-weight: 500; color: #eee; font-family: monospace; }
+.statLabel { font-size: 11px; color: #666; margin-top: 2px; }
+
+.setupText { font-size: 13px; color: #999; text-align: left; line-height: 1.7; }
+.setupSteps { margin: 10px 0; padding-left: 1.25rem; }
+.setupSteps li { margin-bottom: 4px; }
+.setupText b { color: #ccc; }
+.setupText code { font-family: monospace; background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; color: #ddd; font-size: 12px; }
+.code {
+  background: #141414; border: 0.5px solid #2a2a2a; border-radius: 8px;
+  padding: 12px; font-size: 11px; color: #5DCAA5; font-family: monospace;
+  overflow-x: auto; text-align: left;
+}
+.setupNote { margin-top: 10px; font-size: 12px; color: #666; }

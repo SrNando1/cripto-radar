@@ -1,0 +1,27 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  border-bottom: 0.5px solid #2a2a2a;
+  background: #0a0a0a;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo { display: flex; align-items: center; gap: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #1D9E75; }
+.brand { font-size: 14px; font-weight: 500; color: #fff; letter-spacing: 0.08em; font-family: monospace; }
+.badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #0F6E56; color: #5DCAA5; letter-spacing: 0.05em; }
+.links { display: flex; gap: 1.5rem; }
+.links a { font-size: 13px; color: #666; text-decoration: none; transition: color 0.2s; position: relative; }
+.links a:hover { color: #ccc; }
+.links a.active { color: #1D9E75; }
+.count { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #0F6E56; color: #5DCAA5; font-size: 10px; margin-left: 4px; }
+.contaLink { display: inline-flex; align-items: center; }
+.userChip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: #0F6E56; color: #5DCAA5;
+  font-size: 12px; font-weight: 500;
+}

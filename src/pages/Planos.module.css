@@ -1,0 +1,22 @@
+.page { max-width: 900px; margin: 0 auto; padding: 2rem; }
+.header { text-align: center; margin-bottom: 2.5rem; }
+.title { font-size: 24px; font-weight: 500; color: #eee; margin-bottom: 8px; }
+.sub { font-size: 14px; color: #555; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 2rem; }
+.card { background: #111; border: 0.5px solid #2a2a2a; border-radius: 16px; padding: 1.5rem; position: relative; }
+.destaque { border-color: #1D9E75; background: #0d1f1a; }
+.badge { display: inline-block; font-size: 10px; padding: 3px 10px; border-radius: 20px; background: #0F6E56; color: #5DCAA5; margin-bottom: 1rem; letter-spacing: 0.05em; }
+.planNome { font-size: 12px; letter-spacing: 0.1em; color: #555; text-transform: uppercase; margin-bottom: 12px; font-family: monospace; }
+.planPreco { font-size: 32px; font-weight: 500; color: #eee; margin-bottom: 4px; font-family: monospace; }
+.planPeriodo { font-size: 14px; color: #555; font-weight: 400; }
+.planDesc { font-size: 13px; color: #555; margin-bottom: 1.5rem; }
+.features { list-style: none; padding: 0; margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 10px; }
+.features li { font-size: 13px; color: #888; display: flex; align-items: center; gap: 8px; }
+.check { color: #1D9E75; font-size: 12px; }
+.cta { width: 100%; padding: 10px; border-radius: 8px; border: 0.5px solid #2a2a2a; background: transparent; color: #888; cursor: pointer; font-size: 13px; font-family: monospace; transition: all 0.15s; }
+.cta:hover { border-color: #444; color: #ccc; }
+.cta:disabled { border-color: #0F6E56; color: #5DCAA5; background: transparent; cursor: default; }
+.ctaDestaque { background: #1D9E75; border-color: #1D9E75; color: #fff; }
+.ctaDestaque:hover { background: #0F6E56; border-color: #0F6E56; color: #fff; }
+.footer { text-align: center; font-size: 12px; color: #333; }
+@media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }

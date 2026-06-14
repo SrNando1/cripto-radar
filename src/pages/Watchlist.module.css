@@ -1,0 +1,29 @@
+.page { max-width: 1100px; margin: 0 auto; padding: 1.5rem 2rem; }
+.titleRow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.title { font-size: 13px; color: #555; font-family: monospace; letter-spacing: 0.05em; }
+.usage { font-size: 12px; color: #666; font-family: monospace; display: flex; align-items: center; gap: 10px; }
+.upgradeLink { color: #5DCAA5; text-decoration: none; font-size: 12px; }
+.upgradeLink:hover { text-decoration: underline; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.card { background: #111; border: 0.5px solid #2a2a2a; border-radius: 12px; padding: 1rem; cursor: pointer; transition: border-color 0.15s; }
+.card:hover { border-color: #444; }
+.selected { border-color: #1D9E75 !important; background: #0d1f1a; }
+.cardTop { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.coinInfo { display: flex; align-items: center; gap: 8px; }
+.coinName { font-size: 13px; font-weight: 500; color: #eee; }
+.coinSymbol { font-size: 11px; color: #555; }
+.cardActions { display: flex; align-items: center; gap: 2px; }
+.bellBtn { background: none; border: none; cursor: pointer; font-size: 13px; padding: 2px 4px; opacity: 0.35; filter: grayscale(1); transition: opacity 0.15s, filter 0.15s; }
+.bellBtn:hover { opacity: 1; filter: grayscale(0); }
+.removeBtn { background: none; border: none; color: #333; cursor: pointer; font-size: 12px; padding: 2px 4px; transition: color 0.15s; }
+.removeBtn:hover { color: #E24B4A; }
+.cardPrice { font-size: 18px; font-weight: 500; color: #eee; font-family: monospace; margin-bottom: 4px; }
+.cardChange { font-size: 12px; }
+.alertCount { display: inline-block; margin-top: 10px; font-size: 11px; color: #5DCAA5; text-decoration: none; }
+.alertCount:hover { text-decoration: underline; }
+.green { color: #1D9E75; }
+.red { color: #E24B4A; }
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; }
+.emptyIcon { font-size: 48px; color: #2a2a2a; margin-bottom: 1rem; }
+.emptyTitle { font-size: 16px; font-weight: 500; color: #555; margin-bottom: 8px; }
+.emptyText { font-size: 13px; color: #444; max-width: 300px; line-height: 1.6; }

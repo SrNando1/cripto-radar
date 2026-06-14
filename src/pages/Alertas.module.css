@@ -1,0 +1,55 @@
+.page { max-width: 760px; margin: 0 auto; padding: 1.5rem 2rem; }
+.topBar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.title { font-size: 13px; color: #555; font-family: monospace; letter-spacing: 0.05em; }
+.clearBtn {
+  background: none; border: 0.5px solid #2a2a2a; border-radius: 8px;
+  color: #777; font-size: 12px; padding: 6px 12px; cursor: pointer; transition: all 0.15s;
+}
+.clearBtn:hover { border-color: #444; color: #ccc; }
+
+.list { display: flex; flex-direction: column; gap: 8px; }
+.row {
+  display: flex; align-items: center; gap: 14px;
+  background: #111; border: 0.5px solid #2a2a2a; border-radius: 12px;
+  padding: 14px 16px; transition: border-color 0.15s;
+}
+.row:hover { border-color: #383838; }
+.done { opacity: 0.55; }
+
+.info { flex: 1; min-width: 0; text-align: left; }
+.coinName { font-size: 14px; font-weight: 500; color: #eee; display: flex; align-items: center; gap: 8px; }
+.symbol { font-size: 11px; color: #555; font-family: monospace; }
+.condition { font-size: 12px; margin-top: 3px; font-family: monospace; }
+.up { color: #1D9E75; }
+.down { color: #E24B4A; }
+.live { color: #666; }
+.note { font-size: 12px; color: #888; font-style: italic; margin-top: 4px; }
+.emailTag { font-size: 11px; color: #5DCAA5; margin-top: 4px; }
+
+.progressTrack { margin-top: 8px; height: 3px; background: #1e1e1e; border-radius: 2px; overflow: hidden; max-width: 280px; }
+.progressFill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+.fillUp { background: #1D9E75; }
+.fillDown { background: #E24B4A; }
+
+.right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.activeTag { font-size: 10px; color: #5DCAA5; background: #0F6E56; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em; }
+.triggeredTag { font-size: 11px; color: #888; white-space: nowrap; }
+.linkBtn { background: none; border: none; color: #5DCAA5; font-size: 11px; cursor: pointer; padding: 0; }
+.linkBtn:hover { text-decoration: underline; }
+.removeBtn {
+  background: none;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 6px;
+  color: #777;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 4px 10px;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.removeBtn:hover { color: #fff; background: #E24B4A; border-color: #E24B4A; }
+
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; }
+.emptyIcon { font-size: 48px; margin-bottom: 1rem; filter: grayscale(0.3); opacity: 0.7; }
+.emptyTitle { font-size: 16px; font-weight: 500; color: #555; margin-bottom: 8px; }
+.emptyText { font-size: 13px; color: #444; max-width: 340px; line-height: 1.6; }

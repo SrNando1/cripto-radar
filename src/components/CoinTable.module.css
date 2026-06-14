@@ -1,0 +1,23 @@
+.tableWrap { border: 0.5px solid #2a2a2a; border-radius: 12px; overflow: hidden; }
+.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table th { font-size: 10px; letter-spacing: 0.08em; color: #555; font-weight: 400; padding: 10px 16px; text-align: left; border-bottom: 0.5px solid #2a2a2a; background: #111; }
+.table td { padding: 12px 16px; border-bottom: 0.5px solid #1a1a1a; color: #ccc; vertical-align: middle; }
+.table tbody tr:last-child td { border-bottom: none; }
+.table tbody tr { cursor: pointer; transition: background 0.1s; }
+.table tbody tr:hover td { background: #111; }
+.selected td { background: #0d1f1a !important; border-left: 2px solid #1D9E75; }
+.rank { color: #444; font-size: 12px; }
+.coinInfo { display: flex; align-items: center; gap: 10px; }
+.coinInfo img { border-radius: 50%; }
+.coinName { font-weight: 500; color: #eee; font-size: 13px; }
+.coinSymbol { font-size: 11px; color: #555; }
+.price { text-align: right; font-variant-numeric: tabular-nums; color: #eee; }
+.mcap { text-align: right; color: #555; font-size: 12px; }
+.badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 500; }
+.up { background: #0a2e22; color: #1D9E75; }
+.down { background: #2e0a0a; color: #E24B4A; }
+.star { background: none; border: none; cursor: pointer; font-size: 16px; color: #333; transition: color 0.2s; padding: 2px 4px; }
+.star:hover { color: #EF9F27; }
+.starActive { color: #EF9F27 !important; }
+.bell { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; opacity: 0.35; filter: grayscale(1); transition: opacity 0.2s, filter 0.2s; }
+.bell:hover { opacity: 1; filter: grayscale(0); }
