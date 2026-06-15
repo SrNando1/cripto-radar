@@ -4,13 +4,14 @@ import { useAuth } from './AuthContext'
 
 const WatchlistContext = createContext()
 const STORAGE_KEY = 'cripto-watchlist'
+const OWNER_KEY = 'cripto-watchlist-owner' // 'guest' | <userId> — de quem são os dados locais
 
 const logSync = (op) => ({ error }) => {
   if (error) console.warn(`[sync watchlist] ${op}:`, error.message)
 }
 
 export function WatchlistProvider({ children }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const [watchlist, setWatchlist] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY)
     return saved ? JSON.parse(saved) : []
@@ -22,12 +23,24 @@ export function WatchlistProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(watchlist))
   }, [watchlist])
 
-  // Ao iniciar sessão: carrega da cloud e envia as moedas locais que lá faltem
   useEffect(() => {
-    if (!user || !supabase) {
+    // Espera a auth resolver para não agir com estado indefinido
+    if (!supabase || loading) return
+
+    // Sem sessão
+    if (!user) {
+      // Se os dados locais eram de uma conta (não convidado), limpa-os para
+      // não vazarem para a próxima conta que iniciar sessão neste browser.
+      const prevOwner = localStorage.getItem(OWNER_KEY)
+      if (prevOwner && prevOwner !== 'guest') {
+        setWatchlist([])
+        localStorage.setItem(OWNER_KEY, 'guest')
+      }
       setSynced(false)
       return
     }
+
+    // Com sessão: a cloud é a fonte de verdade
     let cancelled = false
     ;(async () => {
       const { data, error } = await supabase
@@ -41,19 +54,28 @@ export function WatchlistProvider({ children }) {
       if (cancelled) return
       const cloud = data.map(r => r.coin)
       const cloudIds = new Set(cloud.map(c => c.id))
-      const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-      const toPush = local.filter(c => !cloudIds.has(c.id))
-      if (toPush.length) {
-        supabase
-          .from('watchlist_items')
-          .upsert(toPush.map(c => ({ user_id: user.id, coin_id: c.id, coin: c })))
-          .then(logSync('merge'))
+
+      // Só fundir dados locais se forem de CONVIDADO (não de outra conta)
+      const prevOwner = localStorage.getItem(OWNER_KEY)
+      let toPush = []
+      if (prevOwner === null || prevOwner === 'guest') {
+        const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+        toPush = local.filter(c => !cloudIds.has(c.id))
+        if (toPush.length) {
+          supabase
+            .from('watchlist_items')
+            .upsert(toPush.map(c => ({ user_id: user.id, coin_id: c.id, coin: c })))
+            .then(logSync('merge'))
+        }
       }
+
+      if (cancelled) return
       setWatchlist([...cloud, ...toPush])
+      localStorage.setItem(OWNER_KEY, user.id)
       setSynced(true)
     })()
     return () => { cancelled = true }
-  }, [user])
+  }, [user, loading])
 
   const addToWatchlist = (coin) => {
     setWatchlist(prev => [...prev, coin])
