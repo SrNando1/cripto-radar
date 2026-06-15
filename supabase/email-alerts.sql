@@ -5,6 +5,11 @@
 alter table public.alerts
   add column if not exists notify_email boolean not null default false;
 
+-- 1b. Flag do canal de email (independente de 'triggered', que é do browser).
+--     Garante que o email é enviado mesmo que o browser já tenha acionado o alerta.
+alter table public.alerts
+  add column if not exists email_sent boolean not null default false;
+
 -- 2. Agendar a Edge Function de 5 em 5 minutos.
 --    Requer as extensões pg_cron e pg_net (Database → Extensions → ativar ambas).
 --    Substitui <PROJ> e <SERVICE_ROLE_KEY> pelos valores do teu projeto.
