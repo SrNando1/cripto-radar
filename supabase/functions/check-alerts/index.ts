@@ -29,10 +29,7 @@ function json(body: unknown, status = 200): Response {
 async function sendEmail(to: string, alert: any, price: number): Promise<boolean> {
   const apiKey = Deno.env.get('RESEND_API_KEY')
   const from = Deno.env.get('ALERT_FROM_EMAIL') ?? 'CriptoRadar <onboarding@resend.dev>'
-  if (!apiKey) {
-    console.error('RESEND_API_KEY em falta')
-    return false
-  }
+  if (!apiKey) return 'no RESEND_API_KEY'
 
   const dir = alert.direction === 'above' ? 'subiu acima de' : 'desceu abaixo de'
   const subject = `🔔 ${alert.coin_name} ${dir} ${fmtPrice(alert.target_price)}`
@@ -50,11 +47,8 @@ async function sendEmail(to: string, alert: any, price: number): Promise<boolean
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ from, to, subject, html }),
   })
-  if (!res.ok) {
-    console.error('Resend erro:', await res.text())
-    return false
-  }
-  return true
+  if (!res.ok) return `resend ${res.status}: ${await res.text()}`
+  return null // sucesso
 }
 
 Deno.serve(async (req) => {
@@ -100,7 +94,7 @@ Deno.serve(async (req) => {
   if (!Array.isArray(markets)) return json({ error: 'CoinGecko indisponível', detail: markets }, 502)
   const priceById = new Map(markets.map((c: any) => [c.id, c.current_price]))
 
-  // 4. Verificar condições, enviar email e marcar como disparado
+  // 4. Verificar condições, enviar email e marcar email_sent
   let sent = 0
   for (const a of eligible) {
     const price = priceById.get(a.coin_id)
@@ -110,11 +104,15 @@ Deno.serve(async (req) => {
 
     const { data: u } = await supabase.auth.admin.getUserById(a.user_id)
     const email = u?.user?.email
-    if (email && await sendEmail(email, a, price)) {
-      sent++
-      // Marca só o email como enviado (não toca no 'triggered' do browser)
-      await supabase.from('alerts').update({ email_sent: true }).eq('id', a.id)
+    if (!email) continue
+
+    const sendErr = await sendEmail(email, a, price)
+    if (sendErr) {
+      console.error('[check-alerts]', a.id, sendErr)
+      continue
     }
+    sent++
+    await supabase.from('alerts').update({ email_sent: true }).eq('id', a.id)
   }
 
   return json({ checked: eligible.length, sent })
