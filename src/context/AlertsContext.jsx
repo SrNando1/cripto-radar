@@ -90,10 +90,12 @@ export function AlertsProvider({ children }) {
       const cloud = data.map(rowToAlert)
       const cloudIds = new Set(cloud.map(a => a.id))
 
-      // Só fundir alertas locais se forem de CONVIDADO (não de outra conta)
+      // Só fundir alertas locais se forem EXPLICITAMENTE de convidado.
+      // (owner ausente = origem desconhecida → não fundir, evita vazar dados
+      // antigos de outra conta que ficaram no localStorage.)
       const prevOwner = localStorage.getItem(OWNER_KEY)
       let toPush = []
-      if (prevOwner === null || prevOwner === 'guest') {
+      if (prevOwner === 'guest') {
         const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
         toPush = local.filter(a => !cloudIds.has(a.id))
         if (toPush.length) {
@@ -132,6 +134,9 @@ export function AlertsProvider({ children }) {
     setAlerts(prev => [novo, ...prev])
     if (user && supabase) {
       supabase.from('alerts').insert(alertToRow(novo, user.id)).then(logSync('add'))
+    } else {
+      // Convidado: marca os dados como tal, para migrarem ao iniciar sessão
+      localStorage.setItem(OWNER_KEY, 'guest')
     }
   }, [user])
 

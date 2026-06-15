@@ -55,10 +55,12 @@ export function WatchlistProvider({ children }) {
       const cloud = data.map(r => r.coin)
       const cloudIds = new Set(cloud.map(c => c.id))
 
-      // Só fundir dados locais se forem de CONVIDADO (não de outra conta)
+      // Só fundir dados locais se forem EXPLICITAMENTE de convidado.
+      // (owner ausente = origem desconhecida → não fundir, evita vazar dados
+      // antigos de outra conta que ficaram no localStorage.)
       const prevOwner = localStorage.getItem(OWNER_KEY)
       let toPush = []
-      if (prevOwner === null || prevOwner === 'guest') {
+      if (prevOwner === 'guest') {
         const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
         toPush = local.filter(c => !cloudIds.has(c.id))
         if (toPush.length) {
@@ -84,6 +86,9 @@ export function WatchlistProvider({ children }) {
         .from('watchlist_items')
         .upsert({ user_id: user.id, coin_id: coin.id, coin })
         .then(logSync('add'))
+    } else {
+      // Convidado: marca os dados como tal, para migrarem ao iniciar sessão
+      localStorage.setItem(OWNER_KEY, 'guest')
     }
   }
 
