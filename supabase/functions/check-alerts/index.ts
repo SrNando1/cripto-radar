@@ -70,12 +70,14 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
 
-  // 1. Alertas por disparar com email ligado
+  // 1. Alertas com email ligado ainda por enviar.
+  //    Usa email_sent (independente de 'triggered', que é do canal do browser),
+  //    para o email funcionar mesmo que o browser já tenha acionado o alerta.
   const { data: alerts, error } = await supabase
     .from('alerts')
     .select('*')
-    .eq('triggered', false)
     .eq('notify_email', true)
+    .eq('email_sent', false)
   if (error) return json({ error: error.message }, 500)
   if (!alerts?.length) return json({ checked: 0, sent: 0 })
 
@@ -108,12 +110,11 @@ Deno.serve(async (req) => {
 
     const { data: u } = await supabase.auth.admin.getUserById(a.user_id)
     const email = u?.user?.email
-    if (email && await sendEmail(email, a, price)) sent++
-
-    await supabase
-      .from('alerts')
-      .update({ triggered: true, triggered_at: new Date().toISOString() })
-      .eq('id', a.id)
+    if (email && await sendEmail(email, a, price)) {
+      sent++
+      // Marca só o email como enviado (não toca no 'triggered' do browser)
+      await supabase.from('alerts').update({ email_sent: true }).eq('id', a.id)
+    }
   }
 
   return json({ checked: eligible.length, sent })
