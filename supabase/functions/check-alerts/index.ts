@@ -57,7 +57,14 @@ async function sendEmail(to: string, alert: any, price: number): Promise<boolean
   return true
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  // Proteção: o cron tem de enviar o header x-cron-secret igual ao CRON_SECRET.
+  // (A função está deployed com --no-verify-jwt, por isso a guarda é aqui.)
+  const cronSecret = Deno.env.get('CRON_SECRET')
+  if (cronSecret && req.headers.get('x-cron-secret') !== cronSecret) {
+    return json({ error: 'unauthorized' }, 401)
+  }
+
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
