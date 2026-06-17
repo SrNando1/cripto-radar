@@ -4,6 +4,7 @@ import { fetchCoinChart } from '../services/api'
 import { usePlan } from '../context/PlanContext'
 import { getLimits } from '../config/plans'
 import UpgradeModal from './UpgradeModal'
+import AiAnalysisModal from './AiAnalysisModal'
 import styles from './PriceChart.module.css'
 
 const RANGES = [
@@ -20,16 +21,28 @@ function fmtPrice(p) {
 }
 
 export default function PriceChart({ coin }) {
-  const { plan } = usePlan()
+  const { plan, isPaid } = usePlan()
   const { chartMaxDays } = getLimits(plan)
   const [days, setDays] = useState(7)
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
-  const [showUpgrade, setShowUpgrade] = useState(false)
+  const [upgrade, setUpgrade] = useState(null) // null | { title, message }
+  const [showAi, setShowAi] = useState(false)
+
+  const onAnalyse = () => {
+    if (isPaid) setShowAi(true)
+    else setUpgrade({
+      title: 'Análise com IA é Pro',
+      message: 'Faz upgrade para Pro e recebe análises da IA para qualquer criptomoeda.',
+    })
+  }
 
   const selectRange = (r) => {
     if (r.days > chartMaxDays) {
-      setShowUpgrade(true)
+      setUpgrade({
+        title: 'Histórico estendido é Pro',
+        message: 'O plano Free mostra até 7 dias. Faz upgrade para Pro e analisa 30, 90 dias ou mais.',
+      })
       return
     }
     setDays(r.days)
@@ -75,6 +88,9 @@ export default function PriceChart({ coin }) {
               {isUp ? '+' : ''}{coin.price_change_percentage_24h?.toFixed(2)}% 24h
             </span>
           </div>
+          <button className={styles.aiBtn} onClick={onAnalyse}>
+            ✨ Análise IA{!isPaid && ' 🔒'}
+          </button>
         </div>
         <div className={styles.rangeTabs}>
           {RANGES.map(r => {
@@ -113,13 +129,14 @@ export default function PriceChart({ coin }) {
           </AreaChart>
         </ResponsiveContainer>
       )}
-      {showUpgrade && (
+      {upgrade && (
         <UpgradeModal
-          title="Histórico estendido é Pro"
-          message="O plano Free mostra até 7 dias. Faz upgrade para Pro e analisa 30, 90 dias ou mais."
-          onClose={() => setShowUpgrade(false)}
+          title={upgrade.title}
+          message={upgrade.message}
+          onClose={() => setUpgrade(null)}
         />
       )}
+      {showAi && <AiAnalysisModal coin={coin} onClose={() => setShowAi(false)} />}
     </div>
   )
 }

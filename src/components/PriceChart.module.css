@@ -10,4 +10,18 @@
 .rangeTab.active { background: #0a2e22; color: #1D9E75; border-color: #0F6E56; }
 .rangeTab.locked { color: #444; opacity: 0.7; }
 .rangeTab.locked:hover { color: #888; border-color: #2a2a2a; }
+
+.aiBtn {
+  margin-top: 10px;
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 0.5px solid rgba(192, 132, 252, 0.4);
+  background: rgba(192, 132, 252, 0.08);
+  color: #c084fc;
+  cursor: pointer;
+  font-family: monospace;
+  transition: background 0.15s;
+}
+.aiBtn:hover { background: rgba(192, 132, 252, 0.16); }
 .loading { text-align: center; color: #444; font-size: 12px; padding: 4rem 0; }
