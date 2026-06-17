@@ -49,6 +49,9 @@ const PLANOS = [
     features: ['Tudo do Pro', 'Alertas por SMS', 'Portfolio tracker', 'Exportar dados CSV', 'API de acesso', 'Suporte prioritário'],
     cta: 'Começar Trader',
     destaque: false,
+    // Escondido até as funcionalidades exclusivas estarem implementadas.
+    // Remover esta flag para reativar o plano na página.
+    hidden: true,
   },
 ]
 
@@ -81,7 +84,7 @@ export default function Planos() {
         <div className={styles.sub}>Começa grátis. Escala quando precisares.</div>
       </div>
       <div className={styles.grid}>
-        {PLANOS.map(plano => {
+        {PLANOS.filter(p => !p.hidden).map(plano => {
           const atual = plan === plano.id
           return (
             <div key={plano.id} className={`${styles.card} ${plano.destaque ? styles.destaque : ''}`}>
