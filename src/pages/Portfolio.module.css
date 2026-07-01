@@ -1,0 +1,48 @@
+.page { max-width: 900px; margin: 0 auto; padding: 1.5rem 2rem; }
+.topBar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.title { font-size: 13px; color: #555; font-family: monospace; letter-spacing: 0.05em; }
+.usage { font-size: 12px; color: #666; font-family: monospace; display: flex; align-items: center; gap: 10px; }
+.upgradeLink { color: #5DCAA5; text-decoration: none; }
+.upgradeLink:hover { text-decoration: underline; }
+
+.summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.25rem; }
+.sumCard { background: #111; border: 0.5px solid #2a2a2a; border-radius: 12px; padding: 16px; }
+.sumLabel { font-size: 11px; color: #666; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px; }
+.sumValue { font-size: 22px; font-weight: 500; color: #eee; font-family: monospace; }
+.sumPct { font-size: 13px; }
+.green { color: #1D9E75; }
+.red { color: #E24B4A; }
+
+.addForm { display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.select, .input {
+  background: #141414; border: 0.5px solid #2a2a2a; border-radius: 10px;
+  padding: 11px 12px; color: #eee; font-size: 13px; outline: none;
+}
+.select { flex: 2; min-width: 160px; }
+.input { flex: 1; min-width: 110px; }
+.select:focus, .input:focus { border-color: #1D9E75; }
+.addBtn {
+  background: #1D9E75; border: none; border-radius: 10px; padding: 11px 20px;
+  color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s;
+}
+.addBtn:hover { background: #17865f; }
+
+.tableWrap { border: 0.5px solid #2a2a2a; border-radius: 12px; overflow: hidden; }
+.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table th { font-size: 10px; letter-spacing: 0.08em; color: #555; font-weight: 400; padding: 10px 14px; text-align: left; border-bottom: 0.5px solid #2a2a2a; background: #111; }
+.table td { padding: 12px 14px; border-bottom: 0.5px solid #1a1a1a; color: #ccc; vertical-align: middle; }
+.table tbody tr:last-child td { border-bottom: none; }
+.num { text-align: right; font-family: monospace; font-variant-numeric: tabular-nums; }
+.pnlPct { font-size: 11px; margin-top: 2px; }
+.coin { display: flex; align-items: center; gap: 10px; }
+.coin img { border-radius: 50%; }
+.coinName { font-weight: 500; color: #eee; }
+.coinSym { font-size: 11px; color: #555; }
+.removeBtn { background: none; border: none; color: #333; cursor: pointer; font-size: 13px; transition: color 0.15s; }
+.removeBtn:hover { color: #E24B4A; }
+
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 30vh; text-align: center; }
+.emptyIcon { font-size: 40px; margin-bottom: 1rem; opacity: 0.7; }
+.emptyText { font-size: 13px; color: #555; max-width: 340px; line-height: 1.6; }
+
+@media (max-width: 640px) { .summary { grid-template-columns: 1fr; } }

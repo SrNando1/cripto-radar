@@ -22,6 +22,7 @@ export default function Navbar() {
         <Link to="/watchlist" className={pathname === '/watchlist' ? styles.active : ''}>
           Watchlist {watchlist.length > 0 && <span className={styles.count}>{watchlist.length}</span>}
         </Link>
+        <Link to="/portfolio" className={pathname === '/portfolio' ? styles.active : ''}>Portfolio</Link>
         <Link to="/alertas" className={pathname === '/alertas' ? styles.active : ''}>
           Alertas {activeCount > 0 && <span className={styles.count}>{activeCount}</span>}
         </Link>
