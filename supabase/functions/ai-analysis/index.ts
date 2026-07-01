@@ -16,8 +16,8 @@ const CACHE_TTL_MS = 60 * 60 * 1000 // 1 hora
 // partilhados e ficam frequentemente rate-limited (429) — por isso tentamos
 // vários até um responder. Override via OPENROUTER_MODEL (vírgulas).
 const DEFAULT_MODELS = [
-  'nvidia/nemotron-3-super-120b-a12b:free',
   'openai/gpt-oss-120b:free',
+  'openai/gpt-oss-20b:free',
   'meta-llama/llama-3.3-70b-instruct:free',
   'qwen/qwen3-next-80b-a3b-instruct:free',
   'google/gemma-4-31b-it:free',
@@ -44,24 +44,61 @@ function fmtPrice(p: number): string {
   return '$' + p.toFixed(6)
 }
 
+function fmtPct(v: number): string {
+  if (v == null || isNaN(v)) return 'n/d'
+  return `${v >= 0 ? '+' : ''}${Number(v).toFixed(1)}%`
+}
+
 function buildPrompt(coin: any): string {
   const linhas = [
     `Moeda: ${coin.name} (${(coin.symbol || '').toUpperCase()})`,
-    `Preço atual: ${fmtPrice(coin.current_price)}`,
-    coin.price_change_percentage_24h != null ? `Variação 24h: ${coin.price_change_percentage_24h.toFixed(2)}%` : null,
-    coin.market_cap != null ? `Cap. de mercado: $${Number(coin.market_cap).toLocaleString('pt-PT')}` : null,
-    coin.market_cap_rank != null ? `Ranking: #${coin.market_cap_rank}` : null,
+    `Preço: ${fmtPrice(coin.current_price)}`,
+    `Variação 24h: ${fmtPct(coin.change_24h)}`,
+    `Variação 7 dias: ${fmtPct(coin.change_7d)}`,
+    `Variação 30 dias: ${fmtPct(coin.change_30d)}`,
+    coin.market_cap_rank != null ? `Ranking de mercado: #${coin.market_cap_rank}` : null,
   ].filter(Boolean).join('\n')
 
-  return `És um analista de cripto. Com base nos dados abaixo, escreve uma análise CURTA e objetiva em português de Portugal, com exatamente estes 3 tópicos (uma a duas frases cada):
-• Momentum: o que o movimento recente sugere
-• Contexto: posição no mercado / nível a vigiar
-• Risco: o principal risco a ter em conta
+  return `És um analista de cripto. Com base nos dados abaixo, indica a TENDÊNCIA de investimento para 3 horizontes:
+- curto: dias (baseia-te sobretudo na variação 24h e 7 dias)
+- medio: semanas (variação 7 e 30 dias)
+- longo: meses (variação 30 dias e posição no mercado)
+
+Os campos "curto", "medio" e "longo" têm de ser EXATAMENTE uma destas palavras (sem mais nada): compra, venda, ou neutro.
+Só o campo "resumo" contém uma frase.
+
+Devolve APENAS um objeto JSON válido, sem texto à volta, exatamente neste formato:
+{"curto":"neutro","medio":"compra","longo":"venda","resumo":"uma frase curta (máx 15 palavras) em português a justificar"}
 
 Dados:
 ${linhas}
 
-Regras: máximo ~90 palavras no total, tom neutro e informativo, NÃO dês conselhos de compra/venda. Não inventes dados que não estão acima.`
+Não inventes dados que não estão acima. Responde só com o JSON.`
+}
+
+// Extrai o JSON do texto do modelo e normaliza os sinais.
+function parseResult(raw: string): any {
+  let s = (raw || '').replace(/```json/gi, '').replace(/```/g, '').trim()
+  const start = s.indexOf('{')
+  const end = s.lastIndexOf('}')
+  if (start === -1 || end === -1) return null
+  let obj: any
+  try {
+    obj = JSON.parse(s.slice(start, end + 1))
+  } catch {
+    return null
+  }
+  const norm = (v: any) => {
+    const x = String(v || '').toLowerCase()
+    if (x.includes('compra')) return 'compra'
+    if (x.includes('venda')) return 'venda'
+    return 'neutro'
+  }
+  if (obj.curto == null && obj.medio == null && obj.longo == null) return null
+  return {
+    signals: { curto: norm(obj.curto), medio: norm(obj.medio), longo: norm(obj.longo) },
+    resumo: typeof obj.resumo === 'string' ? obj.resumo.slice(0, 200) : '',
+  }
 }
 
 Deno.serve(async (req) => {
@@ -104,19 +141,22 @@ Deno.serve(async (req) => {
   }
   if (!coin?.id) return json({ error: 'Falta a moeda' }, 400)
 
-  // 4. Cache: devolver análise recente (< 1h) se existir
+  // 4. Cache: devolver tendência recente (< 1h) se existir e for válida
   const { data: cached } = await supabase
     .from('ai_analysis_cache')
     .select('content, created_at')
     .eq('coin_id', coin.id)
     .maybeSingle()
   if (cached && Date.now() - new Date(cached.created_at).getTime() < CACHE_TTL_MS) {
-    return json({ analysis: cached.content, cached: true })
+    try {
+      const parsed = JSON.parse(cached.content)
+      if (parsed?.signals) return json({ analysis: parsed, cached: true })
+    } catch { /* formato antigo → regenerar */ }
   }
 
   // 5. Chamar o OpenRouter (API compatível com OpenAI), tentando os modelos por ordem
   const prompt = buildPrompt(coin)
-  let analysis = ''
+  let result: any = null
   let usedModel = ''
   let lastDetail = ''
   for (const m of models) {
@@ -132,8 +172,8 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           model: m,
           messages: [{ role: 'user', content: prompt }],
-          max_tokens: 300,
-          temperature: 0.5,
+          max_tokens: 200,
+          temperature: 0.3,
         }),
       })
       if (!res.ok) {
@@ -142,25 +182,26 @@ Deno.serve(async (req) => {
       }
       const data = await res.json()
       const content = data?.choices?.[0]?.message?.content?.trim()
-      if (content) {
-        analysis = content
+      const parsed = parseResult(content)
+      if (parsed) {
+        result = parsed
         usedModel = m
         break
       }
-      lastDetail = `${m}: resposta vazia`
+      lastDetail = `${m}: JSON inválido`
     } catch (e) {
       lastDetail = `${m}: ${String(e)}`
     }
   }
 
-  if (!analysis) {
+  if (!result) {
     return json({ error: 'Todos os modelos IA estão indisponíveis de momento.', detail: lastDetail }, 502)
   }
 
-  // 6. Guardar no cache (upsert por moeda)
+  // 6. Guardar no cache (JSON) e devolver
   await supabase
     .from('ai_analysis_cache')
-    .upsert({ coin_id: coin.id, content: analysis, model: usedModel, created_at: new Date().toISOString() })
+    .upsert({ coin_id: coin.id, content: JSON.stringify(result), model: usedModel, created_at: new Date().toISOString() })
 
-  return json({ analysis, cached: false })
+  return json({ analysis: result, cached: false })
 })

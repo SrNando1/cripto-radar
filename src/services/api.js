@@ -30,7 +30,7 @@ export async function fetchGlobalData() {
 }
 
 export async function fetchCoins(page = 1, perPage = 20) {
-  return get(`/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=false`)
+  return get(`/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=false&price_change_percentage=24h,7d,30d`)
 }
 
 export async function fetchCoinChart(coinId, days = 7) {

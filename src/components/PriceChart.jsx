@@ -89,7 +89,7 @@ export default function PriceChart({ coin }) {
             </span>
           </div>
           <button className={styles.aiBtn} onClick={onAnalyse}>
-            ✨ Análise IA{!isPaid && ' 🔒'}
+            ✨ Tendência IA{!isPaid && ' 🔒'}
           </button>
         </div>
         <div className={styles.rangeTabs}>

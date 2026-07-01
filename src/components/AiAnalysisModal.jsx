@@ -2,9 +2,22 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import styles from './AiAnalysisModal.module.css'
 
+const HORIZONTES = [
+  { key: 'curto', label: 'Curto prazo', hint: 'dias' },
+  { key: 'medio', label: 'Médio prazo', hint: 'semanas' },
+  { key: 'longo', label: 'Longo prazo', hint: 'meses' },
+]
+
+function Sinal({ valor }) {
+  const v = (valor || '').toLowerCase()
+  const cls = v.includes('compra') ? styles.compra : v.includes('venda') ? styles.venda : styles.neutro
+  const txt = v.includes('compra') ? 'Compra' : v.includes('venda') ? 'Venda' : 'Neutro'
+  return <span className={`${styles.badge} ${cls}`}>{txt}</span>
+}
+
 export default function AiAnalysisModal({ coin, onClose }) {
   const [loading, setLoading] = useState(true)
-  const [analysis, setAnalysis] = useState('')
+  const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -26,15 +39,15 @@ export default function AiAnalysisModal({ coin, onClose }) {
               name: coin.name,
               symbol: coin.symbol,
               current_price: coin.current_price,
-              price_change_percentage_24h: coin.price_change_percentage_24h,
-              market_cap: coin.market_cap,
+              change_24h: coin.price_change_percentage_24h,
+              change_7d: coin.price_change_percentage_7d_in_currency,
+              change_30d: coin.price_change_percentage_30d_in_currency,
               market_cap_rank: coin.market_cap_rank,
             },
           },
         })
         if (cancelled) return
         if (err) {
-          // Extrai a mensagem real devolvida pela função (para diagnóstico/UX)
           let msg = err.message || 'erro desconhecido'
           try {
             const body = await err.context?.json?.()
@@ -42,7 +55,7 @@ export default function AiAnalysisModal({ coin, onClose }) {
           } catch { /* mantém msg */ }
           throw new Error(msg)
         }
-        setAnalysis(data.analysis)
+        setResult(data.analysis)
       } catch (e) {
         if (!cancelled) setError(e.message || 'Não foi possível gerar a análise. Tenta novamente daqui a pouco.')
       } finally {
@@ -58,17 +71,33 @@ export default function AiAnalysisModal({ coin, onClose }) {
         <div className={styles.header}>
           <div className={styles.title}>
             <img src={coin.image} alt={coin.name} width={24} height={24} style={{ borderRadius: '50%' }} />
-            <span>✨ Análise IA · {coin.name}</span>
+            <span>✨ Tendência IA · {coin.name}</span>
           </div>
           <button className={styles.close} onClick={onClose}>✕</button>
         </div>
 
         {loading && <div className={styles.loading}>A analisar com IA…</div>}
         {error && <div className={styles.error}>{error}</div>}
-        {!loading && !error && <div className={styles.body}>{analysis}</div>}
+
+        {!loading && !error && result && (
+          <>
+            <div className={styles.rows}>
+              {HORIZONTES.map(h => (
+                <div key={h.key} className={styles.row}>
+                  <div className={styles.rowLabel}>
+                    {h.label}
+                    <span className={styles.hint}>{h.hint}</span>
+                  </div>
+                  <Sinal valor={result.signals?.[h.key]} />
+                </div>
+              ))}
+            </div>
+            {result.resumo && <div className={styles.resumo}>{result.resumo}</div>}
+          </>
+        )}
 
         <div className={styles.disclaimer}>
-          Análise informativa gerada por IA — não é aconselhamento financeiro.
+          Tendência informativa gerada por IA — não é aconselhamento financeiro. Decide por tua conta.
         </div>
       </div>
     </div>
