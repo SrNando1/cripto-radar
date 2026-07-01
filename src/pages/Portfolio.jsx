@@ -35,7 +35,7 @@ export default function Portfolio() {
   const priceById = useMemo(() => new Map(market.map(c => [c.id, c])), [market])
 
   const rows = holdings.map(h => {
-    const live = priceById.get(h.id)
+    const live = priceById.get(h.coinId)
     const price = live?.current_price
     const value = price != null ? h.quantity * price : null
     const cost = h.quantity * h.buyPrice
@@ -51,15 +51,8 @@ export default function Portfolio() {
 
   const onPickCoin = (id) => {
     setCoinId(id)
-    const existing = holdings.find(h => h.id === id)
-    if (existing) {
-      // Já tens esta moeda → pré-preenche para editares a posição
-      setQty(String(existing.quantity))
-      setBuy(String(existing.buyPrice))
-    } else {
-      const c = priceById.get(id)
-      setBuy(c ? String(c.current_price) : '') // sugere o preço atual como preço de compra
-    }
+    const c = priceById.get(id)
+    setBuy(c ? String(c.current_price) : '') // sugere o preço atual como preço de compra
   }
 
   const onAdd = (e) => {
@@ -68,12 +61,11 @@ export default function Portfolio() {
     const q = parseFloat(qty)
     const b = parseFloat(buy)
     if (!c || isNaN(q) || q <= 0 || isNaN(b) || b <= 0) return
-    const jaExiste = holdings.some(h => h.id === coinId)
-    if (!jaExiste && holdings.length >= portfolioMax) {
+    if (holdings.length >= portfolioMax) {
       setShowUpgrade(true)
       return
     }
-    addHolding(c, q, b)
+    addHolding(c, q, b) // adiciona sempre um novo lote (permite várias compras)
     setCoinId(''); setQty(''); setBuy('')
   }
 
@@ -119,9 +111,7 @@ export default function Portfolio() {
         </select>
         <input className={styles.input} type="number" step="any" placeholder="Quantidade" value={qty} onChange={e => setQty(e.target.value)} />
         <input className={styles.input} type="number" step="any" placeholder="Preço médio ($)" value={buy} onChange={e => setBuy(e.target.value)} />
-        <button className={styles.addBtn} type="submit">
-          {coinId && holdings.some(h => h.id === coinId) ? 'Atualizar' : 'Adicionar'}
-        </button>
+        <button className={styles.addBtn} type="submit">Adicionar</button>
       </form>
 
       {/* Lista */}

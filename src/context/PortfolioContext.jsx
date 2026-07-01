@@ -10,14 +10,24 @@ const logSync = (op) => ({ error }) => {
   if (error) console.warn(`[sync portfolio] ${op}:`, error.message)
 }
 
+// Cada holding é um LOTE (uma compra), com id próprio — pode haver vários por moeda.
 function rowToItem(r) {
-  return { ...r.coin, id: r.coin_id, quantity: r.quantity, buyPrice: r.buy_price }
+  return {
+    id: r.id,
+    coinId: r.coin_id,
+    name: r.coin?.name,
+    symbol: r.coin?.symbol,
+    image: r.coin?.image,
+    quantity: r.quantity,
+    buyPrice: r.buy_price,
+  }
 }
 function itemToRow(it, userId) {
   return {
+    id: it.id,
     user_id: userId,
-    coin_id: it.id,
-    coin: { id: it.id, name: it.name, symbol: it.symbol, image: it.image },
+    coin_id: it.coinId,
+    coin: { id: it.coinId, name: it.name, symbol: it.symbol, image: it.image },
     quantity: it.quantity,
     buy_price: it.buyPrice,
   }
@@ -67,27 +77,31 @@ export function PortfolioProvider({ children }) {
     return () => { cancelled = true }
   }, [user, loading])
 
+  // Adiciona sempre um novo lote (permite várias compras da mesma moeda)
   const addHolding = (coin, quantity, buyPrice) => {
-    const it = { id: coin.id, name: coin.name, symbol: coin.symbol, image: coin.image, quantity, buyPrice }
-    setHoldings(prev => {
-      const rest = prev.filter(h => h.id !== coin.id)
-      return [...rest, it]
-    })
-    if (user && supabase) supabase.from('portfolio_items').upsert(itemToRow(it, user.id)).then(logSync('add'))
+    const it = {
+      id: `${coin.id}-${Date.now()}`,
+      coinId: coin.id,
+      name: coin.name,
+      symbol: coin.symbol,
+      image: coin.image,
+      quantity,
+      buyPrice,
+    }
+    setHoldings(prev => [...prev, it])
+    if (user && supabase) supabase.from('portfolio_items').insert(itemToRow(it, user.id)).then(logSync('add'))
     else localStorage.setItem(OWNER_KEY, 'guest')
   }
 
-  const removeHolding = (coinId) => {
-    setHoldings(prev => prev.filter(h => h.id !== coinId))
+  const removeHolding = (id) => {
+    setHoldings(prev => prev.filter(h => h.id !== id))
     if (user && supabase) {
-      supabase.from('portfolio_items').delete().eq('user_id', user.id).eq('coin_id', coinId).then(logSync('remove'))
+      supabase.from('portfolio_items').delete().eq('id', id).then(logSync('remove'))
     }
   }
 
-  const hasHolding = (coinId) => holdings.some(h => h.id === coinId)
-
   return (
-    <PortfolioContext.Provider value={{ holdings, addHolding, removeHolding, hasHolding }}>
+    <PortfolioContext.Provider value={{ holdings, addHolding, removeHolding }}>
       {children}
     </PortfolioContext.Provider>
   )
