@@ -69,6 +69,7 @@ Para cada horizonte devolve o SINAL (compra, venda ou neutro) e um ALVO de preç
 - venda → alvo = preço ACIMA do atual onde faz sentido vender/realizar
 - neutro → alvo = null
 Alvos do curto prazo ficam perto do preço atual; os do longo mais afastados. Baseia-te no preço e nas variações.
+Evita "neutro" quando a variação de um horizonte for claramente positiva (tende a compra) ou negativa (tende a venda); usa "neutro" só quando os sinais forem mesmo mistos.
 
 Devolve APENAS um objeto JSON válido, sem texto à volta, exatamente neste formato:
 {"curto":{"sinal":"compra","alvo":58500},"medio":{"sinal":"neutro","alvo":null},"longo":{"sinal":"venda","alvo":72000},"resumo":"uma frase curta (máx 15 palavras) em português"}
@@ -125,6 +126,30 @@ function parseResult(raw: string, current: number): any {
   }
 }
 
+// Fallback por regras (quando todos os modelos IA falham): sinais a partir das
+// variações reais, seguindo a tendência (subir → compra, descer → venda).
+function ruleResult(data: any): any {
+  const price = Number(data.current_price) || 0
+  const sig = (change: number, thresh: number) => {
+    if (change == null || isNaN(change)) return 'neutro'
+    if (change >= thresh) return 'compra'
+    if (change <= -thresh) return 'venda'
+    return 'neutro'
+  }
+  const mk = (sinal: string, band: number) => ({
+    sinal,
+    alvo: sinal === 'neutro' ? null : (sinal === 'compra' ? price * (1 - band) : price * (1 + band)),
+  })
+  return {
+    signals: {
+      curto: mk(sig(data.change_24h, 3), BANDS.curto),
+      medio: mk(sig(data.change_7d, 5), BANDS.medio),
+      longo: mk(sig(data.change_30d, 8), BANDS.longo),
+    },
+    resumo: 'Tendência estimada a partir das variações de 24h, 7 e 30 dias.',
+  }
+}
+
 Deno.serve(async (req) => {
   // Preflight CORS do browser
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -178,8 +203,32 @@ Deno.serve(async (req) => {
     } catch { /* formato antigo → regenerar */ }
   }
 
+  // 4b. Buscar dados de mercado autoritativos (24h/7d/30d) à CoinGecko —
+  //     não dependemos do que o cliente enviou.
+  const cgKey = Deno.env.get('CG_API_KEY')
+  let data = coin
+  try {
+    const cgUrl = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coin.id}&price_change_percentage=24h,7d,30d` +
+      (cgKey ? `&x_cg_demo_api_key=${cgKey}` : '')
+    const cgRes = await fetch(cgUrl, { headers: { accept: 'application/json' } })
+    const arr = cgRes.ok ? await cgRes.json() : null
+    const m = Array.isArray(arr) && arr[0] ? arr[0] : null
+    if (m) {
+      data = {
+        id: m.id,
+        name: m.name,
+        symbol: m.symbol,
+        current_price: m.current_price,
+        change_24h: m.price_change_percentage_24h_in_currency ?? m.price_change_percentage_24h,
+        change_7d: m.price_change_percentage_7d_in_currency,
+        change_30d: m.price_change_percentage_30d_in_currency,
+        market_cap_rank: m.market_cap_rank,
+      }
+    }
+  } catch { /* usa o que veio do cliente */ }
+
   // 5. Chamar o OpenRouter (API compatível com OpenAI), tentando os modelos por ordem
-  const prompt = buildPrompt(coin)
+  const prompt = buildPrompt(data)
   let result: any = null
   let usedModel = ''
   let lastDetail = ''
@@ -206,7 +255,7 @@ Deno.serve(async (req) => {
       }
       const data = await res.json()
       const content = data?.choices?.[0]?.message?.content?.trim()
-      const parsed = parseResult(content, Number(coin.current_price))
+      const parsed = parseResult(content, Number(data.current_price))
       if (parsed) {
         result = parsed
         usedModel = m
@@ -218,8 +267,10 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Se todos os modelos IA falharam, recorre às regras — a feature nunca fica indisponível.
   if (!result) {
-    return json({ error: 'Todos os modelos IA estão indisponíveis de momento.', detail: lastDetail }, 502)
+    result = ruleResult(data)
+    usedModel = 'regras'
   }
 
   // 6. Guardar no cache (JSON) e devolver
