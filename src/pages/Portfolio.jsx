@@ -51,8 +51,15 @@ export default function Portfolio() {
 
   const onPickCoin = (id) => {
     setCoinId(id)
-    const c = priceById.get(id)
-    if (c && !buy) setBuy(String(c.current_price)) // sugere o preço atual como preço de compra
+    const existing = holdings.find(h => h.id === id)
+    if (existing) {
+      // Já tens esta moeda → pré-preenche para editares a posição
+      setQty(String(existing.quantity))
+      setBuy(String(existing.buyPrice))
+    } else {
+      const c = priceById.get(id)
+      setBuy(c ? String(c.current_price) : '') // sugere o preço atual como preço de compra
+    }
   }
 
   const onAdd = (e) => {
@@ -112,7 +119,9 @@ export default function Portfolio() {
         </select>
         <input className={styles.input} type="number" step="any" placeholder="Quantidade" value={qty} onChange={e => setQty(e.target.value)} />
         <input className={styles.input} type="number" step="any" placeholder="Preço médio ($)" value={buy} onChange={e => setBuy(e.target.value)} />
-        <button className={styles.addBtn} type="submit">Adicionar</button>
+        <button className={styles.addBtn} type="submit">
+          {coinId && holdings.some(h => h.id === coinId) ? 'Atualizar' : 'Adicionar'}
+        </button>
       </form>
 
       {/* Lista */}
@@ -154,8 +163,8 @@ export default function Portfolio() {
                   <td className={`${styles.num} ${r.pnl >= 0 ? styles.green : styles.red}`}>
                     {fmt(r.pnl)}<div className={styles.pnlPct}>{fmtPct(r.pnlPct)}</div>
                   </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <button className={styles.removeBtn} onClick={() => removeHolding(r.id)} title="Remover">✕</button>
+                  <td style={{ textAlign: 'right' }}>
+                    <button className={styles.removeBtn} onClick={() => removeHolding(r.id)} title="Eliminar posição">✕ eliminar</button>
                   </td>
                 </tr>
               ))}
