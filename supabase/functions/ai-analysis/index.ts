@@ -64,11 +64,14 @@ function buildPrompt(coin: any): string {
 - medio: semanas (variação 7 e 30 dias)
 - longo: meses (variação 30 dias e posição no mercado)
 
-Os campos "curto", "medio" e "longo" têm de ser EXATAMENTE uma destas palavras (sem mais nada): compra, venda, ou neutro.
-Só o campo "resumo" contém uma frase.
+Para cada horizonte devolve o SINAL (compra, venda ou neutro) e um ALVO de preço em USD (número):
+- compra → alvo = preço ABAIXO do atual onde faz sentido comprar/acumular
+- venda → alvo = preço ACIMA do atual onde faz sentido vender/realizar
+- neutro → alvo = null
+Alvos do curto prazo ficam perto do preço atual; os do longo mais afastados. Baseia-te no preço e nas variações.
 
 Devolve APENAS um objeto JSON válido, sem texto à volta, exatamente neste formato:
-{"curto":"neutro","medio":"compra","longo":"venda","resumo":"uma frase curta (máx 15 palavras) em português a justificar"}
+{"curto":{"sinal":"compra","alvo":58500},"medio":{"sinal":"neutro","alvo":null},"longo":{"sinal":"venda","alvo":72000},"resumo":"uma frase curta (máx 15 palavras) em português"}
 
 Dados:
 ${linhas}
@@ -76,8 +79,10 @@ ${linhas}
 Não inventes dados que não estão acima. Responde só com o JSON.`
 }
 
-// Extrai o JSON do texto do modelo e normaliza os sinais.
-function parseResult(raw: string): any {
+// Extrai o JSON do modelo, normaliza os sinais e valida/calcula os alvos.
+const BANDS: Record<string, number> = { curto: 0.03, medio: 0.07, longo: 0.15 }
+
+function parseResult(raw: string, current: number): any {
   let s = (raw || '').replace(/```json/gi, '').replace(/```/g, '').trim()
   const start = s.indexOf('{')
   const end = s.lastIndexOf('}')
@@ -94,9 +99,28 @@ function parseResult(raw: string): any {
     if (x.includes('venda')) return 'venda'
     return 'neutro'
   }
+  // Aceita cada horizonte como objeto {sinal, alvo} ou como string (só sinal).
+  const horiz = (key: string) => {
+    const v = obj[key]
+    const sinal = norm(v && typeof v === 'object' ? v.sinal : v)
+    let alvo: number | null = v && typeof v === 'object' ? Number(v.alvo) : NaN
+    const a = alvo as number
+    // Alvo válido só se estiver do lado certo: compra ABAIXO do atual, venda ACIMA (dentro de ±50%).
+    const sane = current > 0 && isFinite(a) && (
+      (sinal === 'compra' && a < current && a > current * 0.5) ||
+      (sinal === 'venda' && a > current && a < current * 1.5)
+    )
+    if (sinal === 'neutro') alvo = null
+    else if (!sane) {
+      // fallback determinístico a partir do preço atual + banda do horizonte
+      const b = BANDS[key]
+      alvo = sinal === 'compra' ? current * (1 - b) : current * (1 + b)
+    }
+    return { sinal, alvo }
+  }
   if (obj.curto == null && obj.medio == null && obj.longo == null) return null
   return {
-    signals: { curto: norm(obj.curto), medio: norm(obj.medio), longo: norm(obj.longo) },
+    signals: { curto: horiz('curto'), medio: horiz('medio'), longo: horiz('longo') },
     resumo: typeof obj.resumo === 'string' ? obj.resumo.slice(0, 200) : '',
   }
 }
@@ -182,7 +206,7 @@ Deno.serve(async (req) => {
       }
       const data = await res.json()
       const content = data?.choices?.[0]?.message?.content?.trim()
-      const parsed = parseResult(content)
+      const parsed = parseResult(content, Number(coin.current_price))
       if (parsed) {
         result = parsed
         usedModel = m

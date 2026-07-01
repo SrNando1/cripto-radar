@@ -39,6 +39,8 @@
 .rowLabel { font-size: 13px; color: #ddd; display: flex; align-items: baseline; gap: 8px; }
 .hint { font-size: 11px; color: #555; }
 
+.sinalWrap { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.nivel { font-size: 11px; color: #777; font-family: monospace; }
 .badge {
   font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 6px; letter-spacing: 0.02em;
 }

@@ -8,11 +8,27 @@ const HORIZONTES = [
   { key: 'longo', label: 'Longo prazo', hint: 'meses' },
 ]
 
-function Sinal({ valor }) {
-  const v = (valor || '').toLowerCase()
-  const cls = v.includes('compra') ? styles.compra : v.includes('venda') ? styles.venda : styles.neutro
-  const txt = v.includes('compra') ? 'Compra' : v.includes('venda') ? 'Venda' : 'Neutro'
-  return <span className={`${styles.badge} ${cls}`}>{txt}</span>
+function fmtPrice(p) {
+  if (p == null || isNaN(p)) return ''
+  if (p >= 1000) return '$' + p.toLocaleString('pt-PT', { maximumFractionDigits: 0 })
+  if (p >= 1) return '$' + p.toFixed(2)
+  return '$' + p.toFixed(4)
+}
+
+function Linha({ item }) {
+  const sinal = item?.sinal || 'neutro'
+  const cls = sinal === 'compra' ? styles.compra : sinal === 'venda' ? styles.venda : styles.neutro
+  const txt = sinal === 'compra' ? 'Compra' : sinal === 'venda' ? 'Venda' : 'Neutro'
+  const alvo = item?.alvo
+  const nivel = sinal === 'compra' && alvo ? `abaixo de ${fmtPrice(alvo)}`
+    : sinal === 'venda' && alvo ? `acima de ${fmtPrice(alvo)}`
+    : '—'
+  return (
+    <div className={styles.sinalWrap}>
+      <span className={`${styles.badge} ${cls}`}>{txt}</span>
+      <span className={styles.nivel}>{nivel}</span>
+    </div>
+  )
 }
 
 export default function AiAnalysisModal({ coin, onClose }) {
@@ -88,7 +104,7 @@ export default function AiAnalysisModal({ coin, onClose }) {
                     {h.label}
                     <span className={styles.hint}>{h.hint}</span>
                   </div>
-                  <Sinal valor={result.signals?.[h.key]} />
+                  <Linha item={result.signals?.[h.key]} />
                 </div>
               ))}
             </div>
