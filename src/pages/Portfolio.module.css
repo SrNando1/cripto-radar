@@ -33,6 +33,9 @@
 .table td { padding: 12px 14px; border-bottom: 0.5px solid #1a1a1a; color: #ccc; vertical-align: middle; }
 .table tbody tr:last-child td { border-bottom: none; }
 .num { text-align: right; font-family: monospace; font-variant-numeric: tabular-nums; }
+/* Mais específico que ".table td" para o verde/vermelho vencer na coluna L/P */
+.table td.num.green { color: #1D9E75; }
+.table td.num.red { color: #E24B4A; }
 .pnlPct { font-size: 11px; margin-top: 2px; }
 .coin { display: flex; align-items: center; gap: 10px; }
 .coin img { border-radius: 50%; }

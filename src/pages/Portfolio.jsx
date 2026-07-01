@@ -150,7 +150,7 @@ export default function Portfolio() {
                   <td className={styles.num}>{fmt(r.buyPrice)}</td>
                   <td className={styles.num}>{fmt(r.price)}</td>
                   <td className={styles.num}>{fmt(r.value)}</td>
-                  <td className={`${styles.num} ${r.pnl >= 0 ? styles.green : styles.red}`}>
+                  <td className={`${styles.num} ${r.pnl == null ? '' : r.pnl >= 0 ? styles.green : styles.red}`}>
                     {fmt(r.pnl)}<div className={styles.pnlPct}>{fmtPct(r.pnlPct)}</div>
                   </td>
                   <td style={{ textAlign: 'right' }}>
