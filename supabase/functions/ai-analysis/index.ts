@@ -253,8 +253,8 @@ Deno.serve(async (req) => {
         lastDetail = `${m}: ${res.status} ${await res.text()}`.slice(0, 300)
         continue // 429 ou outro erro → tenta o próximo modelo
       }
-      const data = await res.json()
-      const content = data?.choices?.[0]?.message?.content?.trim()
+      const apiData = await res.json()
+      const content = apiData?.choices?.[0]?.message?.content?.trim()
       const parsed = parseResult(content, Number(data.current_price))
       if (parsed) {
         result = parsed
