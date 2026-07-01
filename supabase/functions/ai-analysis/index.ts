@@ -12,7 +12,16 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const CACHE_TTL_MS = 60 * 60 * 1000 // 1 hora
-const DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free'
+// Lista de modelos free (tentados por ordem). Os `:free` do OpenRouter são
+// partilhados e ficam frequentemente rate-limited (429) — por isso tentamos
+// vários até um responder. Override via OPENROUTER_MODEL (vírgulas).
+const DEFAULT_MODELS = [
+  'nvidia/nemotron-3-super-120b-a12b:free',
+  'openai/gpt-oss-120b:free',
+  'meta-llama/llama-3.3-70b-instruct:free',
+  'qwen/qwen3-next-80b-a3b-instruct:free',
+  'google/gemma-4-31b-it:free',
+]
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -54,7 +63,8 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const orKey = Deno.env.get('OPENROUTER_API_KEY')
-  const model = Deno.env.get('OPENROUTER_MODEL') || DEFAULT_MODEL
+  const envModels = Deno.env.get('OPENROUTER_MODEL')
+  const models = envModels ? envModels.split(',').map((s) => s.trim()) : DEFAULT_MODELS
   if (!orKey) return json({ error: 'OPENROUTER_API_KEY em falta' }, 500)
 
   const supabase = createClient(supabaseUrl, serviceKey)
@@ -95,39 +105,53 @@ Deno.serve(async (req) => {
     return json({ analysis: cached.content, cached: true })
   }
 
-  // 5. Chamar o OpenRouter (API compatível com OpenAI)
-  let analysis: string
-  try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${orKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://cripto-radar.vercel.app',
-        'X-Title': 'CriptoRadar',
-      },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: buildPrompt(coin) }],
-        max_tokens: 300,
-        temperature: 0.5,
-      }),
-    })
-    if (!res.ok) {
-      const detail = await res.text()
-      return json({ error: 'Falha na IA', detail }, 502)
+  // 5. Chamar o OpenRouter (API compatível com OpenAI), tentando os modelos por ordem
+  const prompt = buildPrompt(coin)
+  let analysis = ''
+  let usedModel = ''
+  let lastDetail = ''
+  for (const m of models) {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${orKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://cripto-radar.vercel.app',
+          'X-Title': 'CriptoRadar',
+        },
+        body: JSON.stringify({
+          model: m,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 300,
+          temperature: 0.5,
+        }),
+      })
+      if (!res.ok) {
+        lastDetail = `${m}: ${res.status} ${await res.text()}`.slice(0, 300)
+        continue // 429 ou outro erro → tenta o próximo modelo
+      }
+      const data = await res.json()
+      const content = data?.choices?.[0]?.message?.content?.trim()
+      if (content) {
+        analysis = content
+        usedModel = m
+        break
+      }
+      lastDetail = `${m}: resposta vazia`
+    } catch (e) {
+      lastDetail = `${m}: ${String(e)}`
     }
-    const data = await res.json()
-    analysis = data?.choices?.[0]?.message?.content?.trim()
-    if (!analysis) return json({ error: 'Resposta vazia da IA' }, 502)
-  } catch (e) {
-    return json({ error: 'Erro ao contactar a IA', detail: String(e) }, 502)
+  }
+
+  if (!analysis) {
+    return json({ error: 'Todos os modelos IA estão indisponíveis de momento.', detail: lastDetail }, 502)
   }
 
   // 6. Guardar no cache (upsert por moeda)
   await supabase
     .from('ai_analysis_cache')
-    .upsert({ coin_id: coin.id, content: analysis, model, created_at: new Date().toISOString() })
+    .upsert({ coin_id: coin.id, content: analysis, model: usedModel, created_at: new Date().toISOString() })
 
   return json({ analysis, cached: false })
 })
