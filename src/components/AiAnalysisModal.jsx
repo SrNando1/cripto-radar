@@ -33,10 +33,18 @@ export default function AiAnalysisModal({ coin, onClose }) {
           },
         })
         if (cancelled) return
-        if (err) throw err
+        if (err) {
+          // Extrai a mensagem real devolvida pela função (para diagnóstico/UX)
+          let msg = err.message || 'erro desconhecido'
+          try {
+            const body = await err.context?.json?.()
+            if (body?.error) msg = body.error + (body.detail ? ` · ${body.detail}` : '')
+          } catch { /* mantém msg */ }
+          throw new Error(msg)
+        }
         setAnalysis(data.analysis)
       } catch (e) {
-        if (!cancelled) setError('Não foi possível gerar a análise. Tenta novamente daqui a pouco.')
+        if (!cancelled) setError(e.message || 'Não foi possível gerar a análise. Tenta novamente daqui a pouco.')
       } finally {
         if (!cancelled) setLoading(false)
       }
