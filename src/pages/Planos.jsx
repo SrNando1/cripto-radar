@@ -33,7 +33,7 @@ const PLANOS = [
   {
     id: 'pro',
     nome: 'Pro',
-    preco: '7€',
+    preco: '3€',
     periodo: '/mês',
     descricao: 'Para traders e investidores sérios',
     features: ['Todas as criptomoedas', 'Gráficos avançados', 'Watchlist ilimitada', 'Alertas de preço por email', 'Dados atualizados a cada 10s', 'Histórico até 1 ano'],

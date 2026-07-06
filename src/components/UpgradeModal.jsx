@@ -28,7 +28,7 @@ export default function UpgradeModal({ title, message, onClose }) {
         >
           Ver planos Pro
         </button>
-        <div className={styles.hint}>A partir de 7€/mês · cancela quando quiseres</div>
+        <div className={styles.hint}>A partir de 3€/mês · cancela quando quiseres</div>
       </div>
     </div>
   )
