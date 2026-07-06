@@ -1,15 +1,29 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useCoins } from '../hooks/useCoins'
+import { usePlan } from '../context/PlanContext'
+import { getLimits } from '../config/plans'
+import { fetchCoinsByIds } from '../services/api'
 import GlobalMetrics from '../components/GlobalMetrics'
 import CoinTable from '../components/CoinTable'
 import PriceChart from '../components/PriceChart'
+import CoinSearch from '../components/CoinSearch'
 import styles from './Dashboard.module.css'
 
 export default function Dashboard() {
   const { coins, globalData, loading, error, lastUpdate, refresh, refreshMs } = useCoins()
+  const { plan } = usePlan()
+  const canSearch = getLimits(plan).search
   const [selectedCoin, setSelectedCoin] = useState(null)
   const [now, setNow] = useState(Date.now())
+
+  const onPickSearch = async (lite) => {
+    try {
+      const res = await fetchCoinsByIds([lite.id])
+      if (res && res[0]) { setSelectedCoin(res[0]); return }
+    } catch { /* fallback abaixo */ }
+    setSelectedCoin({ id: lite.id, name: lite.name, symbol: lite.symbol, image: lite.thumb })
+  }
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000)
@@ -45,6 +59,8 @@ export default function Dashboard() {
       </div>
 
       {error && <div className={styles.error}>{error}</div>}
+
+      <CoinSearch canSearch={canSearch} onPick={onPickSearch} />
 
       <GlobalMetrics data={globalData} />
       <PriceChart coin={activeCoin} />

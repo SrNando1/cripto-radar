@@ -37,6 +37,18 @@ export async function fetchCoinChart(coinId, days = 7) {
   return get(`/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`)
 }
 
+// Pesquisa por nome/símbolo entre TODAS as criptomoedas (Trader)
+export async function searchCoins(query) {
+  const data = await get(`/search?query=${encodeURIComponent(query)}`)
+  return data.coins || []
+}
+
+// Dados de mercado para moedas específicas (ex.: uma moeda pesquisada)
+export async function fetchCoinsByIds(ids) {
+  if (!ids.length) return []
+  return get(`/coins/markets?vs_currency=usd&ids=${ids.join(',')}&sparkline=false&price_change_percentage=24h,7d,30d`)
+}
+
 export async function fetchCoinDetail(coinId) {
   return get(`/coins/${coinId}?localization=false&tickers=false&community_data=false&developer_data=false`)
 }

@@ -36,7 +36,7 @@ const PLANOS = [
     preco: '3€',
     periodo: '/mês',
     descricao: 'Para traders e investidores sérios',
-    features: ['Todas as criptomoedas', 'Gráficos avançados', 'Watchlist ilimitada', 'Alertas de preço por email', 'Dados atualizados a cada 10s', 'Histórico até 1 ano'],
+    features: ['Top 250 criptomoedas', 'Gráficos avançados (até 1 ano)', 'Watchlist e portfolio ilimitados', 'Alertas de preço por email', 'Dados atualizados a cada 10s', 'Tendência IA'],
     cta: 'Começar Pro',
     destaque: true,
   },
@@ -46,12 +46,9 @@ const PLANOS = [
     preco: '15€',
     periodo: '/mês',
     descricao: 'Para uso profissional',
-    features: ['Tudo do Pro', 'Alertas por SMS', 'Portfolio tracker', 'Exportar dados CSV', 'API de acesso', 'Suporte prioritário'],
+    features: ['Tudo do Pro', '🔍 Todas as criptomoedas (pesquisa de 17.000+)', 'Watchlist e portfolio ilimitados', 'Alertas de preço por email', 'Dados a cada 10s'],
     cta: 'Começar Trader',
     destaque: false,
-    // Escondido até as funcionalidades exclusivas estarem implementadas.
-    // Remover esta flag para reativar o plano na página.
-    hidden: true,
   },
 ]
 
