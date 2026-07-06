@@ -58,6 +58,12 @@ export default function Dashboard() {
           selectedCoinId={activeCoin?.id}
         />
       )}
+
+      {isFreeRefresh && !loading && (
+        <Link to="/planos" className={styles.moreCoins}>
+          🔒 O plano Free mostra o Top 20 — vê as 250 principais criptomoedas no Pro →
+        </Link>
+      )}
     </div>
   )
 }

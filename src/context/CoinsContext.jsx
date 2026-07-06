@@ -7,7 +7,7 @@ const CoinsContext = createContext()
 
 export function CoinsProvider({ children }) {
   const { plan } = usePlan()
-  const refreshMs = getLimits(plan).refreshMs
+  const { refreshMs, coinsMax } = getLimits(plan)
   const [coins, setCoins] = useState([])
   const [globalData, setGlobalData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -17,7 +17,7 @@ export function CoinsProvider({ children }) {
   const load = useCallback(async () => {
     try {
       const [coinsData, global] = await Promise.all([
-        fetchCoins(),
+        fetchCoins(1, coinsMax),
         fetchGlobalData()
       ])
       setCoins(coinsData)
@@ -29,7 +29,7 @@ export function CoinsProvider({ children }) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [coinsMax])
 
   useEffect(() => {
     load()
