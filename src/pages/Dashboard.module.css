@@ -5,6 +5,8 @@
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 .meta { display: flex; align-items: center; gap: 12px; }
 .updated { font-size: 11px; color: #444; font-family: monospace; }
+.proHint { font-size: 11px; color: #c084fc; text-decoration: none; font-family: monospace; border: 0.5px solid rgba(192,132,252,0.35); border-radius: 6px; padding: 3px 8px; transition: background 0.15s; }
+.proHint:hover { background: rgba(192,132,252,0.12); }
 .refreshBtn { font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 0.5px solid #2a2a2a; background: transparent; color: #555; cursor: pointer; font-family: monospace; transition: all 0.15s; }
 .refreshBtn:hover { color: #ccc; border-color: #444; }
 .loading { text-align: center; color: #444; font-size: 13px; padding: 3rem 0; }

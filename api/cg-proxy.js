@@ -22,7 +22,9 @@ export default async function handler(req, res) {
     const upstream = await fetch(target, { headers: { accept: 'application/json' } })
     const body = await upstream.text()
     if (upstream.ok) {
-      res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=90')
+      // Cache curto (10s) para o refresh de 10s do Pro devolver dados frescos;
+      // ainda assim colapsa os pedidos de todos os utilizadores em ~1/10s à CoinGecko.
+      res.setHeader('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=30')
     }
     res.setHeader('Content-Type', 'application/json')
     return res.status(upstream.status).send(body)
