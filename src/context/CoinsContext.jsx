@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { fetchCoins, fetchGlobalData } from '../services/api'
+import { subscribeLivePrices } from '../services/binanceStream'
 import { usePlan } from './PlanContext'
 import { getLimits } from '../config/plans'
 
@@ -7,14 +8,35 @@ const CoinsContext = createContext()
 
 export function CoinsProvider({ children }) {
   const { plan } = usePlan()
-  const { refreshMs, coinsMax } = getLimits(plan)
+  const { refreshMs, coinsMax, livePrices } = getLimits(plan)
   const [coins, setCoins] = useState([])
   const [globalData, setGlobalData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(null)
-  // Preços do refresh anterior, para calcular a variação "desde a última atualização"
+  const [live, setLive] = useState(false) // recebeu pelo menos um preço da Binance
+
+  // Dados-base do CoinGecko (ranking, market cap, 24h, imagens) — a estrutura do mercado.
+  const baseCoins = useRef([])
+  // Últimos preços ao vivo da Binance: { 'BTCUSDT': 63000.12 }
+  const liveMap = useRef({})
+  // Preços mostrados no render anterior, para a diferença "desde a última atualização".
   const prevPrices = useRef({})
+
+  // Combina a base do CoinGecko com o preço ao vivo da Binance (quando existe par USDT)
+  // e calcula a diferença ($) face ao valor mostrado anteriormente.
+  const buildCoins = useCallback(() => {
+    const merged = baseCoins.current.map(c => {
+      const bSym = c.symbol.toUpperCase() + 'USDT'
+      const livePrice = liveMap.current[bSym]
+      const price = livePrice != null ? livePrice : c.current_price
+      const prev = prevPrices.current[c.id]
+      const tickChange = prev != null ? price - prev : null
+      prevPrices.current[c.id] = price
+      return livePrice != null ? { ...c, current_price: price, tickChange } : { ...c, tickChange }
+    })
+    setCoins(merged)
+  }, [])
 
   const load = useCallback(async () => {
     try {
@@ -22,14 +44,8 @@ export function CoinsProvider({ children }) {
         fetchCoins(1, coinsMax),
         fetchGlobalData()
       ])
-      // Enriquece cada moeda com a diferença de preço ($) face ao refresh anterior
-      const enriched = coinsData.map(c => {
-        const prev = prevPrices.current[c.id]
-        const tickChange = prev != null ? c.current_price - prev : null
-        return { ...c, tickChange }
-      })
-      prevPrices.current = Object.fromEntries(coinsData.map(c => [c.id, c.current_price]))
-      setCoins(enriched)
+      baseCoins.current = coinsData
+      buildCoins()
       setGlobalData(global)
       setLastUpdate(new Date())
       setError(null)
@@ -38,7 +54,7 @@ export function CoinsProvider({ children }) {
     } finally {
       setLoading(false)
     }
-  }, [coinsMax])
+  }, [coinsMax, buildCoins])
 
   useEffect(() => {
     load()
@@ -46,8 +62,24 @@ export function CoinsProvider({ children }) {
     return () => clearInterval(interval)
   }, [load, refreshMs])
 
+  // Preços ao vivo da Binance — só nos planos com essa capacidade (Trader).
+  useEffect(() => {
+    if (!livePrices) {
+      liveMap.current = {}
+      setLive(false)
+      return
+    }
+    const unsub = subscribeLivePrices((map) => {
+      liveMap.current = map
+      setLive(true)
+      setLastUpdate(new Date())
+      buildCoins()
+    })
+    return () => { unsub(); setLive(false) }
+  }, [livePrices, buildCoins])
+
   return (
-    <CoinsContext.Provider value={{ coins, globalData, loading, error, lastUpdate, refresh: load, refreshMs }}>
+    <CoinsContext.Provider value={{ coins, globalData, loading, error, lastUpdate, refresh: load, refreshMs, live }}>
       {children}
     </CoinsContext.Provider>
   )

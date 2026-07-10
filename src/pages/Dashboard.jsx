@@ -11,7 +11,7 @@ import CoinSearch from '../components/CoinSearch'
 import styles from './Dashboard.module.css'
 
 export default function Dashboard() {
-  const { coins, globalData, loading, error, lastUpdate, refresh, refreshMs } = useCoins()
+  const { coins, globalData, loading, error, lastUpdate, refresh, refreshMs, live } = useCoins()
   const { plan } = usePlan()
   const canSearch = getLimits(plan).search
   const [selectedCoin, setSelectedCoin] = useState(null)
@@ -45,11 +45,17 @@ export default function Dashboard() {
           Mercado em Tempo Real
         </div>
         <div className={styles.meta}>
-          {lastUpdate && (
-            <span className={styles.updated}>
-              Atualizado {lastUpdate.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
-              {secsLeft != null && <> · próxima em {secsLeft}s</>}
+          {live ? (
+            <span className={styles.liveTag} title="Preços ao vivo via Binance (~1s)">
+              <span className={styles.liveDot} /> Ao vivo · Binance
             </span>
+          ) : (
+            lastUpdate && (
+              <span className={styles.updated}>
+                Atualizado {lastUpdate.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
+                {secsLeft != null && <> · próxima em {secsLeft}s</>}
+              </span>
+            )
           )}
           {isFreeRefresh && (
             <Link to="/planos" className={styles.proHint} title="Atualização a cada 10s no plano Pro">⚡ 10s no Pro</Link>

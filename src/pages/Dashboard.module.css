@@ -5,6 +5,8 @@
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 .meta { display: flex; align-items: center; gap: 12px; }
 .updated { font-size: 11px; color: #111; background: #fff; border: 1px solid #000; border-radius: 6px; padding: 3px 8px; font-family: monospace; }
+.liveTag { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #1D9E75; background: #0a2e22; border: 1px solid #1D9E75; border-radius: 6px; padding: 3px 8px; font-family: monospace; letter-spacing: 0.03em; }
+.liveTag .liveDot { background: #E24B4A; }
 .proHint { font-size: 11px; color: #111; background: #fff; text-decoration: none; font-family: monospace; border: 1px solid #000; border-radius: 6px; padding: 3px 8px; transition: background 0.15s; }
 .proHint:hover { background: #e6e6e6; }
 .refreshBtn { font-size: 11px; padding: 3px 10px; border-radius: 6px; border: 1px solid #000; background: #fff; color: #111; cursor: pointer; font-family: monospace; transition: background 0.15s; }

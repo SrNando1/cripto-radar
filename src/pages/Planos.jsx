@@ -60,6 +60,7 @@ const PLANOS = [
     descricao: "Para uso profissional",
     features: [
       "Tudo do Pro",
+      "🔴 Preços ao vivo ao segundo (Binance)",
       "🔍 Todas as criptomoedas (pesquisa de 17.000+)",
       "📄 Importar transações por CSV",
       "Watchlist e portfolio ilimitados",
