@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { fetchCoins, fetchGlobalData } from '../services/api'
 import { usePlan } from './PlanContext'
 import { getLimits } from '../config/plans'
@@ -13,6 +13,8 @@ export function CoinsProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(null)
+  // Preços do refresh anterior, para calcular a variação "desde a última atualização"
+  const prevPrices = useRef({})
 
   const load = useCallback(async () => {
     try {
@@ -20,7 +22,16 @@ export function CoinsProvider({ children }) {
         fetchCoins(1, coinsMax),
         fetchGlobalData()
       ])
-      setCoins(coinsData)
+      // Enriquece cada moeda com a variação (%) face ao preço do refresh anterior
+      const enriched = coinsData.map(c => {
+        const prev = prevPrices.current[c.id]
+        const tickChange = prev != null && prev > 0
+          ? ((c.current_price - prev) / prev) * 100
+          : null
+        return { ...c, tickChange }
+      })
+      prevPrices.current = Object.fromEntries(coinsData.map(c => [c.id, c.current_price]))
+      setCoins(enriched)
       setGlobalData(global)
       setLastUpdate(new Date())
       setError(null)

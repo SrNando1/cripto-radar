@@ -54,6 +54,7 @@ export default function CoinTable({ coins, onSelectCoin, selectedCoinId }) {
             <th>Nome</th>
             <th style={{ textAlign: 'right' }}>Preço</th>
             <th style={{ textAlign: 'right' }}>24h</th>
+            <th style={{ textAlign: 'right' }} title="Variação desde a última atualização">Δ att.</th>
             <th style={{ textAlign: 'right' }}>Cap. Mercado</th>
             <th style={{ textAlign: 'center' }}>🔔</th>
             <th style={{ textAlign: 'center' }}>★</th>
@@ -85,6 +86,19 @@ export default function CoinTable({ coins, onSelectCoin, selectedCoinId }) {
                   <span className={`${styles.badge} ${up ? styles.up : styles.down}`}>
                     {up ? '+' : ''}{coin.price_change_percentage_24h?.toFixed(2)}%
                   </span>
+                </td>
+                <td style={{ textAlign: 'right' }}>
+                  {coin.tickChange == null ? (
+                    <span className={styles.tickFlat}>—</span>
+                  ) : (
+                    <span
+                      key={coin.current_price}
+                      className={`${styles.tick} ${styles.tickAnim} ${coin.tickChange > 0 ? styles.tickUp : coin.tickChange < 0 ? styles.tickDown : styles.tickFlat}`}
+                    >
+                      {coin.tickChange > 0 ? '▲ +' : coin.tickChange < 0 ? '▼ ' : ''}
+                      {coin.tickChange.toFixed(2)}%
+                    </span>
+                  )}
                 </td>
                 <td className={styles.mcap}>{fmt(coin.market_cap)}</td>
                 <td style={{ textAlign: 'center' }}>

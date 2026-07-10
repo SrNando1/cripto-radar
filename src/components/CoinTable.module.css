@@ -16,6 +16,13 @@
 .badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 500; }
 .up { background: #0a2e22; color: #1D9E75; }
 .down { background: #2e0a0a; color: #E24B4A; }
+/* Variação desde a última atualização — texto subtil, sem fundo */
+.tick { font-size: 11px; font-variant-numeric: tabular-nums; font-weight: 500; }
+.tickUp { color: #1D9E75; }
+.tickDown { color: #E24B4A; }
+.tickFlat { color: #555; }
+@keyframes tickFlash { 0% { opacity: 0.35; } 100% { opacity: 1; } }
+.tickAnim { animation: tickFlash 0.5s ease-out; }
 .star { background: none; border: none; cursor: pointer; font-size: 16px; color: #333; transition: color 0.2s; padding: 2px 4px; }
 .star:hover { color: #EF9F27; }
 .starActive { color: #EF9F27 !important; }
