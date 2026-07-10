@@ -46,7 +46,7 @@ const PLANOS = [
     preco: '15€',
     periodo: '/mês',
     descricao: 'Para uso profissional',
-    features: ['Tudo do Pro', '🔍 Todas as criptomoedas (pesquisa de 17.000+)', 'Watchlist e portfolio ilimitados', 'Alertas de preço por email', 'Dados a cada 10s'],
+    features: ['Tudo do Pro', '🔍 Todas as criptomoedas (pesquisa de 17.000+)', '📄 Importar transações por CSV', 'Watchlist e portfolio ilimitados', 'Alertas de preço por email'],
     cta: 'Começar Trader',
     destaque: false,
   },

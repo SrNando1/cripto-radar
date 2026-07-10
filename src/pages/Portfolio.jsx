@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { usePortfolio } from '../context/PortfolioContext'
 import { usePlan } from '../context/PlanContext'
 import { getLimits } from '../config/plans'
@@ -49,7 +49,8 @@ function parseCSV(text) {
 export default function Portfolio() {
   const { holdings, addHolding, removeHolding } = usePortfolio()
   const { plan } = usePlan()
-  const { portfolioMax } = getLimits(plan)
+  const { portfolioMax, csvImport } = getLimits(plan)
+  const navigate = useNavigate()
 
   const [market, setMarket] = useState([])
   const [coinId, setCoinId] = useState('')
@@ -186,18 +187,26 @@ export default function Portfolio() {
         <button className={styles.addBtn} type="submit">Adicionar</button>
       </form>
 
-      {/* Importar CSV */}
+      {/* Importar CSV — exclusivo Trader */}
       <div className={styles.importRow}>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".csv,text/csv"
-          style={{ display: 'none' }}
-          onChange={e => { onImport(e.target.files[0]); e.target.value = '' }}
-        />
-        <button className={styles.importBtn} onClick={() => fileRef.current?.click()}>📄 Importar transações (CSV)</button>
-        <button className={styles.linkBtn} onClick={downloadTemplate}>descarregar modelo</button>
-        {importMsg && <span className={styles.importMsg}>{importMsg}</span>}
+        {csvImport ? (
+          <>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv,text/csv"
+              style={{ display: 'none' }}
+              onChange={e => { onImport(e.target.files[0]); e.target.value = '' }}
+            />
+            <button className={styles.importBtn} onClick={() => fileRef.current?.click()}>📄 Importar transações (CSV)</button>
+            <button className={styles.linkBtn} onClick={downloadTemplate}>descarregar modelo</button>
+            {importMsg && <span className={styles.importMsg}>{importMsg}</span>}
+          </>
+        ) : (
+          <button className={styles.importLocked} onClick={() => navigate('/planos')} title="Importação por CSV exclusiva do plano Trader">
+            📄 Importar transações (CSV) <span className={styles.lockBadge}>🔒 Trader</span>
+          </button>
+        )}
       </div>
 
       {/* Lista */}

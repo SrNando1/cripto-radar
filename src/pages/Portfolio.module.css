@@ -35,6 +35,13 @@
 .importBtn:hover { border-color: #444; }
 .linkBtn { background: none; border: none; color: #5DCAA5; font-size: 12px; cursor: pointer; padding: 0; text-decoration: underline; }
 .importMsg { font-size: 12px; color: #888; }
+.importLocked {
+  background: #111; border: 0.5px dashed #333; border-radius: 10px;
+  padding: 9px 14px; color: #555; font-size: 12px; cursor: pointer;
+  display: flex; align-items: center; gap: 10px; transition: border-color 0.15s;
+}
+.importLocked:hover { border-color: #444; }
+.lockBadge { color: #c084fc; }
 
 .tableWrap { border: 0.5px solid #2a2a2a; border-radius: 12px; overflow: hidden; }
 .table { width: 100%; border-collapse: collapse; font-size: 13px; }
