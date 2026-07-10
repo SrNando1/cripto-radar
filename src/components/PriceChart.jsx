@@ -17,6 +17,7 @@ const RANGES = [
   { label: '7D', days: 7 },
   { label: '30D', days: 30 },
   { label: '90D', days: 90 },
+  { label: '1A', days: 365 },
 ]
 const DEFAULT_RANGE = RANGES.find(r => r.days === 7)
 
