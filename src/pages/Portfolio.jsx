@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { usePortfolio } from '../context/PortfolioContext'
 import { usePlan } from '../context/PlanContext'
 import { getLimits } from '../config/plans'
-import { fetchCoins } from '../services/api'
+import { fetchCoins, searchCoins } from '../services/api'
 import UpgradeModal from '../components/UpgradeModal'
 import styles from './Portfolio.module.css'
 
@@ -16,6 +16,36 @@ function fmtPct(n) {
   return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`
 }
 
+// Parser CSV simples: separadores , ou ; · deteta cabeçalho · decimal PT ou EN.
+// Colunas esperadas: símbolo, quantidade, preço (de compra).
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+  if (!lines.length) return []
+  let idx = { sym: 0, qty: 1, price: 2 }
+  let start = 0
+  const header = lines[0].toLowerCase()
+  if (/(symbol|s[íi]mbolo|simbolo|moeda|coin|ativo|asset)/.test(header)) {
+    const cols = header.split(/[,;\t]/).map(c => c.trim())
+    const find = (names) => cols.findIndex(c => names.some(n => c.includes(n)))
+    idx = {
+      sym: Math.max(0, find(['symbol', 'símbolo', 'simbolo', 'moeda', 'coin', 'ativo', 'asset'])),
+      qty: Math.max(1, find(['quantidade', 'qtd', 'qty', 'quantity', 'amount', 'unidades'])),
+      price: Math.max(2, find(['preço', 'preco', 'price', 'buy', 'custo', 'valor', 'preço médio'])),
+    }
+    start = 1
+  }
+  const num = (s) => parseFloat(String(s || '').replace(/[^\d.,-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.'))
+  const rows = []
+  for (let i = start; i < lines.length; i++) {
+    const cols = lines[i].split(/[,;\t]/).map(c => c.trim())
+    const symbol = (cols[idx.sym] || '').replace(/["']/g, '')
+    const quantity = num(cols[idx.qty])
+    const buyPrice = num(cols[idx.price])
+    if (symbol) rows.push({ symbol, quantity, buyPrice })
+  }
+  return rows
+}
+
 export default function Portfolio() {
   const { holdings, addHolding, removeHolding } = usePortfolio()
   const { plan } = usePlan()
@@ -26,6 +56,8 @@ export default function Portfolio() {
   const [qty, setQty] = useState('')
   const [buy, setBuy] = useState('')
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [importMsg, setImportMsg] = useState('')
+  const fileRef = useRef(null)
 
   // Top 100 para o seletor e para os preços atuais (uma chamada, com cache)
   useEffect(() => {
@@ -67,6 +99,46 @@ export default function Portfolio() {
     }
     addHolding(c, q, b) // adiciona sempre um novo lote (permite várias compras)
     setCoinId(''); setQty(''); setBuy('')
+  }
+
+  // Resolve um símbolo → moeda (top 100 primeiro; senão pesquisa)
+  const resolveCoin = async (symbol) => {
+    const s = symbol.toLowerCase()
+    const inMarket = market.find(c => c.symbol.toLowerCase() === s)
+    if (inMarket) return inMarket
+    try {
+      const res = await searchCoins(symbol)
+      const m = res.find(c => (c.symbol || '').toLowerCase() === s) || res[0]
+      if (m) return { id: m.id, name: m.name, symbol: m.symbol, image: m.thumb }
+    } catch { /* ignora */ }
+    return null
+  }
+
+  const onImport = async (file) => {
+    if (!file) return
+    setImportMsg('A importar…')
+    const text = await file.text()
+    const csvRows = parseCSV(text)
+    let added = 0, skipped = 0, capped = false
+    for (const row of csvRows) {
+      if (holdings.length + added >= portfolioMax) { capped = true; break }
+      const coin = await resolveCoin(row.symbol)
+      if (!coin || !(row.quantity > 0) || !(row.buyPrice > 0)) { skipped++; continue }
+      addHolding(coin, row.quantity, row.buyPrice)
+      added++
+    }
+    let msg = `✓ ${added} transações importadas`
+    if (skipped) msg += ` · ${skipped} ignoradas (formato inválido)`
+    if (capped) msg += ` · limite Free (${portfolioMax}) atingido — Pro é ilimitado`
+    setImportMsg(msg)
+  }
+
+  const downloadTemplate = () => {
+    const csv = 'symbol,quantidade,preco\nBTC,0.1,55000\nETH,2,3000\nSOL,10,120'
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    const a = document.createElement('a')
+    a.href = url; a.download = 'modelo-portfolio.csv'; a.click()
+    URL.revokeObjectURL(url)
   }
 
   const atalho = isFinite(portfolioMax)
@@ -113,6 +185,20 @@ export default function Portfolio() {
         <input className={styles.input} type="number" step="any" placeholder="Preço médio ($)" value={buy} onChange={e => setBuy(e.target.value)} />
         <button className={styles.addBtn} type="submit">Adicionar</button>
       </form>
+
+      {/* Importar CSV */}
+      <div className={styles.importRow}>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".csv,text/csv"
+          style={{ display: 'none' }}
+          onChange={e => { onImport(e.target.files[0]); e.target.value = '' }}
+        />
+        <button className={styles.importBtn} onClick={() => fileRef.current?.click()}>📄 Importar transações (CSV)</button>
+        <button className={styles.linkBtn} onClick={downloadTemplate}>descarregar modelo</button>
+        {importMsg && <span className={styles.importMsg}>{importMsg}</span>}
+      </div>
 
       {/* Lista */}
       {rows.length === 0 ? (

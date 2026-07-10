@@ -27,6 +27,15 @@
 }
 .addBtn:hover { background: #17865f; }
 
+.importRow { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.importBtn {
+  background: #141414; border: 0.5px solid #2a2a2a; border-radius: 10px;
+  padding: 9px 14px; color: #ccc; font-size: 12px; cursor: pointer; transition: border-color 0.15s;
+}
+.importBtn:hover { border-color: #444; }
+.linkBtn { background: none; border: none; color: #5DCAA5; font-size: 12px; cursor: pointer; padding: 0; text-decoration: underline; }
+.importMsg { font-size: 12px; color: #888; }
+
 .tableWrap { border: 0.5px solid #2a2a2a; border-radius: 12px; overflow: hidden; }
 .table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .table th { font-size: 10px; letter-spacing: 0.08em; color: #555; font-weight: 400; padding: 10px 14px; text-align: left; border-bottom: 0.5px solid #2a2a2a; background: #111; }
