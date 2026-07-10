@@ -19,6 +19,13 @@ function fmtPrice(p) {
   return '$' + p.toFixed(6)
 }
 
+// Diferença de preço ($) desde a última atualização — casas decimais adaptadas à magnitude
+function fmtDiff(d) {
+  const a = Math.abs(d)
+  const dec = a >= 1000 ? 2 : a >= 1 ? 2 : a >= 0.01 ? 4 : 6
+  return '$' + a.toLocaleString('pt-PT', { minimumFractionDigits: dec, maximumFractionDigits: dec })
+}
+
 export default function CoinTable({ coins, onSelectCoin, selectedCoinId }) {
   const { watchlist, isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlist()
   const { plan } = usePlan()
@@ -95,8 +102,8 @@ export default function CoinTable({ coins, onSelectCoin, selectedCoinId }) {
                       key={coin.current_price}
                       className={`${styles.tick} ${styles.tickAnim} ${coin.tickChange > 0 ? styles.tickUp : coin.tickChange < 0 ? styles.tickDown : styles.tickFlat}`}
                     >
-                      {coin.tickChange > 0 ? '▲ +' : coin.tickChange < 0 ? '▼ ' : ''}
-                      {coin.tickChange.toFixed(2)}%
+                      {coin.tickChange > 0 ? '▲ +' : coin.tickChange < 0 ? '▼ -' : ''}
+                      {fmtDiff(coin.tickChange)}
                     </span>
                   )}
                 </td>

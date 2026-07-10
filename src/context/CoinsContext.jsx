@@ -22,12 +22,10 @@ export function CoinsProvider({ children }) {
         fetchCoins(1, coinsMax),
         fetchGlobalData()
       ])
-      // Enriquece cada moeda com a variação (%) face ao preço do refresh anterior
+      // Enriquece cada moeda com a diferença de preço ($) face ao refresh anterior
       const enriched = coinsData.map(c => {
         const prev = prevPrices.current[c.id]
-        const tickChange = prev != null && prev > 0
-          ? ((c.current_price - prev) / prev) * 100
-          : null
+        const tickChange = prev != null ? c.current_price - prev : null
         return { ...c, tickChange }
       })
       prevPrices.current = Object.fromEntries(coinsData.map(c => [c.id, c.current_price]))
