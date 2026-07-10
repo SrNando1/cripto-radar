@@ -49,6 +49,15 @@ export async function fetchCoinsByIds(ids) {
   return get(`/coins/markets?vs_currency=usd&ids=${ids.join(',')}&sparkline=false&price_change_percentage=24h,7d,30d`)
 }
 
+// Quantos USD vale 1 unidade de `cur` (ex.: EUR) — via Tether ≈ 1 USD
+export async function fetchUsdRate(cur) {
+  const c = (cur || 'usd').toLowerCase()
+  if (c === 'usd') return 1
+  const d = await get(`/simple/price?ids=tether&vs_currencies=usd,${c}`)
+  const t = d.tether
+  return t?.usd && t?.[c] ? t.usd / t[c] : 1
+}
+
 export async function fetchCoinDetail(coinId) {
   return get(`/coins/${coinId}?localization=false&tickers=false&community_data=false&developer_data=false`)
 }

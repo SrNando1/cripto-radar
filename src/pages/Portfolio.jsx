@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { usePortfolio } from '../context/PortfolioContext'
 import { usePlan } from '../context/PlanContext'
 import { getLimits } from '../config/plans'
-import { fetchCoins, searchCoins } from '../services/api'
+import { fetchCoins, searchCoins, fetchUsdRate } from '../services/api'
 import UpgradeModal from '../components/UpgradeModal'
 import styles from './Portfolio.module.css'
 
@@ -18,13 +18,15 @@ function fmtPct(n) {
 
 const num = (s) => parseFloat(String(s || '').replace(/[^\d.,-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.'))
 const QUOTES = ['USDT', 'FDUSD', 'USDC', 'BUSD', 'TUSD', 'DAI', 'EUR', 'TRY', 'GBP', 'BRL', 'BTC', 'ETH', 'BNB']
+const STABLES = ['USDT', 'FDUSD', 'USDC', 'BUSD', 'TUSD', 'DAI']
+const quoteToCurrency = (q) => (STABLES.includes(q) ? 'USD' : q)
 
 function splitLine(l) {
   return l.split(/[,;\t]/).map(c => c.trim().replace(/^["']|["']$/g, ''))
 }
 
-// Parser CSV: reconhece o formato da Binance (Trade History) e o modelo simples.
-// Devolve linhas { symbol, quantity, buyPrice } — só compras.
+// Parser CSV: reconhece Binance Trade History (spot), Binance Fiat Buy e o modelo simples.
+// Devolve linhas { symbol, quantity, buyPrice, currency } — só compras.
 function parseCSV(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
   if (!lines.length) return []
@@ -32,7 +34,28 @@ function parseCSV(text) {
   const cols = splitLine(header)
   const col = (...names) => cols.findIndex(c => names.some(n => c === n || c.includes(n)))
 
-  // --- Formato Binance (Trade History): Date, Pair, Side, Price, Executed, Amount, Fee ---
+  // --- Binance Fiat Buy: Time, Method, Spend Amount, Receive Amount, Fee, Price, Status ---
+  if (header.includes('receive amount')) {
+    const iRecv = col('receive amount'), iPrice = col('price'), iSpend = col('spend amount'), iStatus = col('status')
+    const rows = []
+    for (let i = 1; i < lines.length; i++) {
+      const c = splitLine(lines[i])
+      if (iStatus >= 0 && !/success|conclu|complet/i.test(c[iStatus] || '')) continue // só concluídas
+      const rm = (c[iRecv] || '').match(/^([\d.,]+)\s*([A-Za-z]+)/) // "0.00519406 BTC"
+      if (!rm) continue
+      const quantity = num(rm[1])
+      const symbol = rm[2].toUpperCase()
+      const priceStr = c[iPrice] || ''
+      const buyPrice = num(priceStr) // ex.: "57758.28 BTC/EUR"
+      // moeda: do preço "X/EUR" ou do "Spend Amount" "300 EUR"
+      const cm = priceStr.match(/\/([A-Za-z]{3})/) || (c[iSpend] || '').match(/([A-Za-z]{3})\s*$/)
+      const currency = cm ? cm[1].toUpperCase() : 'USD'
+      if (symbol) rows.push({ symbol, quantity, buyPrice, currency })
+    }
+    return rows
+  }
+
+  // --- Binance Trade History (spot): Date, Pair, Side, Price, Executed, Amount, Fee ---
   if (header.includes('pair') && header.includes('side')) {
     const iPair = col('pair'), iSide = col('side'), iPrice = col('price'), iExec = col('executed')
     const rows = []
@@ -42,16 +65,17 @@ function parseCSV(text) {
       if (!side.includes('buy') && !side.includes('compra')) continue // só compras
 
       // símbolo + quantidade a partir de "Executed" (ex.: "0.01000000BTC")
-      let symbol = '', quantity = NaN
+      let symbol = '', quantity = NaN, currency = 'USD'
       const m = (c[iExec] || '').match(/^([\d.,]+)\s*([A-Za-z]+)?$/)
       if (m) { quantity = num(m[1]); if (m[2]) symbol = m[2].toUpperCase() }
-      if (!symbol && c[iPair]) {
+      if (c[iPair]) {
         const pair = c[iPair].toUpperCase()
         const q = QUOTES.find(x => pair.endsWith(x) && pair.length > x.length)
-        symbol = q ? pair.slice(0, -q.length) : pair
+        if (q) { currency = quoteToCurrency(q); if (!symbol) symbol = pair.slice(0, -q.length) }
+        else if (!symbol) symbol = pair
       }
       const buyPrice = num(c[iPrice])
-      if (symbol) rows.push({ symbol, quantity, buyPrice })
+      if (symbol) rows.push({ symbol, quantity, buyPrice, currency })
     }
     return rows
   }
@@ -71,7 +95,7 @@ function parseCSV(text) {
   for (let i = start; i < lines.length; i++) {
     const c = splitLine(lines[i])
     const symbol = c[idx.sym] || ''
-    if (symbol) rows.push({ symbol, quantity: num(c[idx.qty]), buyPrice: num(c[idx.price]) })
+    if (symbol) rows.push({ symbol, quantity: num(c[idx.qty]), buyPrice: num(c[idx.price]), currency: 'USD' })
   }
   return rows
 }
@@ -150,12 +174,23 @@ export default function Portfolio() {
     setImportMsg('A importar…')
     const text = await file.text()
     const csvRows = parseCSV(text)
+
+    // Preços vêm na moeda de compra (ex.: EUR). Convertemos para USD (o app compara em USD).
+    const rates = { USD: 1 }
+    const currencies = [...new Set(csvRows.map(r => (r.currency || 'USD').toUpperCase()))]
+    for (const cur of currencies) {
+      if (rates[cur] != null) continue
+      try { rates[cur] = await fetchUsdRate(cur) } catch { rates[cur] = 1 }
+    }
+
     let added = 0, skipped = 0, capped = false
     for (const row of csvRows) {
       if (holdings.length + added >= portfolioMax) { capped = true; break }
       const coin = await resolveCoin(row.symbol)
-      if (!coin || !(row.quantity > 0) || !(row.buyPrice > 0)) { skipped++; continue }
-      addHolding(coin, row.quantity, row.buyPrice)
+      const rate = rates[(row.currency || 'USD').toUpperCase()] || 1
+      const buyPriceUsd = row.buyPrice * rate
+      if (!coin || !(row.quantity > 0) || !(buyPriceUsd > 0)) { skipped++; continue }
+      addHolding(coin, row.quantity, buyPriceUsd)
       added++
     }
     let msg = `✓ ${added} transações importadas`
