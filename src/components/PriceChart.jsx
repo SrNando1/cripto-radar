@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
 import { fetchCoinChart } from '../services/api'
 import { usePlan } from '../context/PlanContext'
@@ -24,7 +24,7 @@ export default function PriceChart({ coin }) {
   const { plan, isPaid } = usePlan()
   const { chartMaxDays } = getLimits(plan)
   const [days, setDays] = useState(7)
-  const [data, setData] = useState([])
+  const [history, setHistory] = useState([]) // histórico do CoinGecko (não muda a cada tick)
   const [loading, setLoading] = useState(false)
   const [upgrade, setUpgrade] = useState(null) // null | { title, message }
   const [showAi, setShowAi] = useState(false)
@@ -48,10 +48,12 @@ export default function PriceChart({ coin }) {
     setDays(r.days)
   }
 
+  // Refaz o histórico só quando muda a moeda ou o intervalo — não a cada tick de preço.
+  const coinId = coin?.id
   useEffect(() => {
-    if (!coin) return
+    if (!coinId) return
     setLoading(true)
-    fetchCoinChart(coin.id, days)
+    fetchCoinChart(coinId, days)
       .then(res => {
         const step = Math.max(1, Math.floor(res.prices.length / 80))
         const points = res.prices
@@ -63,10 +65,17 @@ export default function PriceChart({ coin }) {
               : date.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })
             return { label, price }
           })
-        setData(points)
+        setHistory(points)
       })
       .finally(() => setLoading(false))
-  }, [coin, days])
+  }, [coinId, days])
+
+  // O gráfico acompanha o preço ao vivo: acrescenta um ponto "agora" no fim da linha.
+  const data = useMemo(() => {
+    const live = coin?.current_price
+    if (!history.length || live == null) return history
+    return [...history, { label: 'agora', price: live }]
+  }, [history, coin?.current_price])
 
   if (!coin) return null
 
@@ -125,7 +134,7 @@ export default function PriceChart({ coin }) {
               itemStyle={{ color: color }}
               formatter={v => [fmtPrice(v), 'Preço']}
             />
-            <Area type="monotone" dataKey="price" stroke={color} strokeWidth={1.5} fill="url(#colorPrice)" dot={false} />
+            <Area type="monotone" dataKey="price" stroke={color} strokeWidth={1.5} fill="url(#colorPrice)" dot={false} isAnimationActive={false} />
           </AreaChart>
         </ResponsiveContainer>
       )}

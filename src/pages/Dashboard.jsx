@@ -35,7 +35,9 @@ export default function Dashboard() {
     : null
   const isFreeRefresh = refreshMs >= 60000
 
-  const activeCoin = selectedCoin || coins[0] || null
+  // Reconcilia a moeda selecionada com o array ao vivo, para o preço/gráfico acompanharem.
+  const liveSelected = selectedCoin ? (coins.find(c => c.id === selectedCoin.id) || selectedCoin) : null
+  const activeCoin = liveSelected || coins[0] || null
 
   return (
     <div className={styles.page}>
