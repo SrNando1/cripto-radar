@@ -1,18 +1,24 @@
 import { useState, useEffect, useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
 import { fetchCoinChart } from '../services/api'
+import { fetchKlines } from '../services/binanceStream'
 import { usePlan } from '../context/PlanContext'
 import { getLimits } from '../config/plans'
 import UpgradeModal from './UpgradeModal'
 import AiAnalysisModal from './AiAnalysisModal'
 import styles from './PriceChart.module.css'
 
+// Intervalos intraday (Binance klines, resolução ao seg/min) + históricos (CoinGecko).
 const RANGES = [
+  { label: '30s', binance: true, interval: '1s', limit: 30, live: true },
+  { label: '1m', binance: true, interval: '1s', limit: 60, live: true },
+  { label: '30m', binance: true, interval: '1m', limit: 30, live: true },
   { label: '1D', days: 1 },
   { label: '7D', days: 7 },
   { label: '30D', days: 30 },
   { label: '90D', days: 90 },
 ]
+const DEFAULT_RANGE = RANGES.find(r => r.days === 7)
 
 function fmtPrice(p) {
   if (p >= 1000) return '$' + p.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -23,8 +29,8 @@ function fmtPrice(p) {
 export default function PriceChart({ coin }) {
   const { plan, isPaid } = usePlan()
   const { chartMaxDays } = getLimits(plan)
-  const [days, setDays] = useState(7)
-  const [history, setHistory] = useState([]) // histórico do CoinGecko (não muda a cada tick)
+  const [range, setRange] = useState(DEFAULT_RANGE)
+  const [history, setHistory] = useState([]) // pontos da fonte (CoinGecko ou Binance), não muda a cada tick
   const [loading, setLoading] = useState(false)
   const [upgrade, setUpgrade] = useState(null) // null | { title, message }
   const [showAi, setShowAi] = useState(false)
@@ -38,6 +44,13 @@ export default function PriceChart({ coin }) {
   }
 
   const selectRange = (r) => {
+    if (r.binance && !isPaid) {
+      setUpgrade({
+        title: 'Gráficos intraday são Pro',
+        message: 'Vê o movimento ao segundo e ao minuto (via Binance). Faz upgrade para Pro ou Trader.',
+      })
+      return
+    }
     if (r.days > chartMaxDays) {
       setUpgrade({
         title: 'Histórico estendido é Pro',
@@ -45,30 +58,57 @@ export default function PriceChart({ coin }) {
       })
       return
     }
-    setDays(r.days)
+    setRange(r)
   }
 
-  // Refaz o histórico só quando muda a moeda ou o intervalo — não a cada tick de preço.
+  // Refaz os pontos só quando muda a moeda ou o intervalo — não a cada tick de preço.
   const coinId = coin?.id
+  const binanceSymbol = coin?.symbol ? coin.symbol.toUpperCase() + 'USDT' : null
   useEffect(() => {
     if (!coinId) return
-    setLoading(true)
-    fetchCoinChart(coinId, days)
-      .then(res => {
-        const step = Math.max(1, Math.floor(res.prices.length / 80))
-        const points = res.prices
-          .filter((_, i) => i % step === 0)
-          .map(([ts, price]) => {
-            const date = new Date(ts)
-            const label = days <= 1
-              ? date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
-              : date.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })
+    let cancelled = false
+
+    async function fetchData(showLoad) {
+      if (showLoad) setLoading(true)
+      try {
+        let points
+        if (range.binance) {
+          if (!binanceSymbol) { if (!cancelled) setHistory([]); return }
+          const kl = await fetchKlines(binanceSymbol, range.interval, range.limit)
+          points = kl.map(({ ts, price }) => {
+            const d = new Date(ts)
+            const label = range.interval === '1s'
+              ? d.toLocaleTimeString('pt-PT', { minute: '2-digit', second: '2-digit' })
+              : d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
             return { label, price }
           })
-        setHistory(points)
-      })
-      .finally(() => setLoading(false))
-  }, [coinId, days])
+        } else {
+          const res = await fetchCoinChart(coinId, range.days)
+          const step = Math.max(1, Math.floor(res.prices.length / 80))
+          points = res.prices
+            .filter((_, i) => i % step === 0)
+            .map(([ts, price]) => {
+              const date = new Date(ts)
+              const label = range.days <= 1
+                ? date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
+                : date.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })
+              return { label, price }
+            })
+        }
+        if (!cancelled) setHistory(points)
+      } catch {
+        if (!cancelled && showLoad) setHistory([])
+      } finally {
+        if (showLoad && !cancelled) setLoading(false)
+      }
+    }
+
+    fetchData(true)
+    // Intervalos intraday: refresca a janela sem piscar (1s → 2s, 30m → 20s).
+    let timer
+    if (range.binance) timer = setInterval(() => fetchData(false), range.interval === '1s' ? 2000 : 20000)
+    return () => { cancelled = true; if (timer) clearInterval(timer) }
+  }, [coinId, binanceSymbol, range])
 
   // O gráfico acompanha o preço ao vivo: acrescenta um ponto "agora" no fim da linha.
   const data = useMemo(() => {
@@ -103,11 +143,11 @@ export default function PriceChart({ coin }) {
         </div>
         <div className={styles.rangeTabs}>
           {RANGES.map(r => {
-            const locked = r.days > chartMaxDays
+            const locked = r.binance ? !isPaid : r.days > chartMaxDays
             return (
               <button
-                key={r.days}
-                className={`${styles.rangeTab} ${days === r.days ? styles.active : ''} ${locked ? styles.locked : ''}`}
+                key={r.label}
+                className={`${styles.rangeTab} ${range.label === r.label ? styles.active : ''} ${locked ? styles.locked : ''}`}
                 onClick={() => selectRange(r)}
                 title={locked ? 'Disponível no plano Pro' : undefined}
               >{r.label}{locked && ' 🔒'}</button>
@@ -117,6 +157,8 @@ export default function PriceChart({ coin }) {
       </div>
       {loading ? (
         <div className={styles.loading}>A carregar gráfico...</div>
+      ) : range.binance && !data.length ? (
+        <div className={styles.loading}>Sem dados intraday para esta moeda na Binance.</div>
       ) : (
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>

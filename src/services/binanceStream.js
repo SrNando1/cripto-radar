@@ -2,6 +2,21 @@
 // Stream `!miniTicker@arr`: array com o mini-ticker de TODOS os símbolos, ~1×/seg.
 // Cada item tem { s: 'BTCUSDT', c: '63000.00', ... } (c = último preço de fecho).
 const WS_URL = 'wss://stream.binance.com:9443/ws/!miniTicker@arr'
+const REST_URL = 'https://api.binance.com/api/v3/klines'
+
+/**
+ * Velas (klines) da Binance para gráficos intraday — REST público, sem chave.
+ * `interval`: '1s', '1m', '30m'… · `limit`: nº de velas.
+ * Devolve [{ ts, price }] usando o preço de fecho de cada vela.
+ */
+export async function fetchKlines(symbol, interval, limit) {
+  const url = `${REST_URL}?symbol=${symbol}&interval=${interval}&limit=${limit}`
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Binance ${res.status}`)
+  const arr = await res.json()
+  if (!Array.isArray(arr)) return []
+  return arr.map(k => ({ ts: k[0], price: parseFloat(k[4]) }))
+}
 
 /**
  * Subscreve os preços ao vivo. `onPrices` recebe um mapa { 'BTCUSDT': 63000.12, ... }
