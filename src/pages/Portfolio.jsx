@@ -248,7 +248,7 @@ export default function Portfolio() {
           ))}
         </select>
         <input className={styles.input} type="number" step="any" placeholder="Quantidade" value={qty} onChange={e => setQty(e.target.value)} />
-        <input className={styles.input} type="number" step="any" placeholder="Preço médio ($)" value={buy} onChange={e => setBuy(e.target.value)} />
+        <input className={styles.input} type="number" step="any" placeholder="Preço de compra ($)" value={buy} onChange={e => setBuy(e.target.value)} />
         <button className={styles.addBtn} type="submit">Adicionar</button>
       </form>
 
@@ -287,7 +287,7 @@ export default function Portfolio() {
               <tr>
                 <th>Cripto</th>
                 <th style={{ textAlign: 'right' }}>Qtd.</th>
-                <th style={{ textAlign: 'right' }}>Preço médio</th>
+                <th style={{ textAlign: 'right' }}>Preço de compra</th>
                 <th style={{ textAlign: 'right' }}>Preço atual</th>
                 <th style={{ textAlign: 'right' }}>Valor</th>
                 <th style={{ textAlign: 'right' }}>L/P</th>
