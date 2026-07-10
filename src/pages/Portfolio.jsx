@@ -16,32 +16,62 @@ function fmtPct(n) {
   return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`
 }
 
-// Parser CSV simples: separadores , ou ; · deteta cabeçalho · decimal PT ou EN.
-// Colunas esperadas: símbolo, quantidade, preço (de compra).
+const num = (s) => parseFloat(String(s || '').replace(/[^\d.,-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.'))
+const QUOTES = ['USDT', 'FDUSD', 'USDC', 'BUSD', 'TUSD', 'DAI', 'EUR', 'TRY', 'GBP', 'BRL', 'BTC', 'ETH', 'BNB']
+
+function splitLine(l) {
+  return l.split(/[,;\t]/).map(c => c.trim().replace(/^["']|["']$/g, ''))
+}
+
+// Parser CSV: reconhece o formato da Binance (Trade History) e o modelo simples.
+// Devolve linhas { symbol, quantity, buyPrice } — só compras.
 function parseCSV(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
   if (!lines.length) return []
+  const header = lines[0].toLowerCase()
+  const cols = splitLine(header)
+  const col = (...names) => cols.findIndex(c => names.some(n => c === n || c.includes(n)))
+
+  // --- Formato Binance (Trade History): Date, Pair, Side, Price, Executed, Amount, Fee ---
+  if (header.includes('pair') && header.includes('side')) {
+    const iPair = col('pair'), iSide = col('side'), iPrice = col('price'), iExec = col('executed')
+    const rows = []
+    for (let i = 1; i < lines.length; i++) {
+      const c = splitLine(lines[i])
+      const side = (c[iSide] || '').toLowerCase()
+      if (!side.includes('buy') && !side.includes('compra')) continue // só compras
+
+      // símbolo + quantidade a partir de "Executed" (ex.: "0.01000000BTC")
+      let symbol = '', quantity = NaN
+      const m = (c[iExec] || '').match(/^([\d.,]+)\s*([A-Za-z]+)?$/)
+      if (m) { quantity = num(m[1]); if (m[2]) symbol = m[2].toUpperCase() }
+      if (!symbol && c[iPair]) {
+        const pair = c[iPair].toUpperCase()
+        const q = QUOTES.find(x => pair.endsWith(x) && pair.length > x.length)
+        symbol = q ? pair.slice(0, -q.length) : pair
+      }
+      const buyPrice = num(c[iPrice])
+      if (symbol) rows.push({ symbol, quantity, buyPrice })
+    }
+    return rows
+  }
+
+  // --- Modelo simples: símbolo, quantidade, preço ---
   let idx = { sym: 0, qty: 1, price: 2 }
   let start = 0
-  const header = lines[0].toLowerCase()
   if (/(symbol|s[íi]mbolo|simbolo|moeda|coin|ativo|asset)/.test(header)) {
-    const cols = header.split(/[,;\t]/).map(c => c.trim())
-    const find = (names) => cols.findIndex(c => names.some(n => c.includes(n)))
     idx = {
-      sym: Math.max(0, find(['symbol', 'símbolo', 'simbolo', 'moeda', 'coin', 'ativo', 'asset'])),
-      qty: Math.max(1, find(['quantidade', 'qtd', 'qty', 'quantity', 'amount', 'unidades'])),
-      price: Math.max(2, find(['preço', 'preco', 'price', 'buy', 'custo', 'valor', 'preço médio'])),
+      sym: Math.max(0, col('symbol', 'símbolo', 'simbolo', 'moeda', 'coin', 'ativo', 'asset')),
+      qty: Math.max(1, col('quantidade', 'qtd', 'qty', 'quantity', 'amount', 'unidades')),
+      price: Math.max(2, col('preço', 'preco', 'price', 'buy', 'custo', 'valor')),
     }
     start = 1
   }
-  const num = (s) => parseFloat(String(s || '').replace(/[^\d.,-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.'))
   const rows = []
   for (let i = start; i < lines.length; i++) {
-    const cols = lines[i].split(/[,;\t]/).map(c => c.trim())
-    const symbol = (cols[idx.sym] || '').replace(/["']/g, '')
-    const quantity = num(cols[idx.qty])
-    const buyPrice = num(cols[idx.price])
-    if (symbol) rows.push({ symbol, quantity, buyPrice })
+    const c = splitLine(lines[i])
+    const symbol = c[idx.sym] || ''
+    if (symbol) rows.push({ symbol, quantity: num(c[idx.qty]), buyPrice: num(c[idx.price]) })
   }
   return rows
 }
